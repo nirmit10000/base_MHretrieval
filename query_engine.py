@@ -299,6 +299,29 @@ NULL SAFETY:
 
 DEFAULT LIMIT: {C.SQL_DEFAULT_LIMIT} unless user specifies otherwise
 
+QUERY INTENT DEFAULTS:
+Read the question carefully and infer intent before writing SQL.
+
+Winner filter (add won=1):
+- Question contains: "results", "winners", "who won", "winning candidates", "victor"
+- Do NOT add won=1 for: "details", "data", "all candidates", "contest", "how many candidates", "deposit", "forfeited"
+
+Runner-up / losers (do NOT add won=1):
+- Question contains: "runner up", "runner-up", "second place", "lost", "defeated", "anti-incumbency", "who lost"
+- Use rank=2 for runner-up, won=0 for all losers
+
+All candidates (no won filter at all):
+- Question contains: "all candidates", "every candidate", "full data", "all data", "contest", "filed nominations", "deposit forfeited"
+
+DEFAULT COLUMNS for results/details queries — always include these when returning candidate-level rows:
+  candidate, party, alliance, votes, vote_share, rank, won, margin, margin_pct
+  (add ac_name or pc_name based on geography level of the question)
+
+AGGREGATION DEFAULTS — when question asks about a region/party/year without asking for individual candidates:
+- "seats won by X" → COUNT of won=1 grouped by the relevant dimension
+- "vote share of X" → SUM(votes)/SUM(total_votes_cast)*100 or AVG(vote_share) for won=1 rows
+- "performance of X across districts" → GROUP BY district, return seats_won + avg_vote_share
+
 {_schema_ground(db_path)}
 """
 
