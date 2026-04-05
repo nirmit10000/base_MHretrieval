@@ -113,11 +113,13 @@ ELTYPE_MAP = {
 
 
 # ── Place name cache (loaded once at startup) ─────────────────────────────────
-_AC_NAMES: list[str] = []
-_PC_NAMES: list[str] = []
+_AC_NAMES:       list[str] = []
+_PC_NAMES:       list[str] = []
+_DISTRICT_NAMES: list[str] = []
+_ZONE_NAMES:     list[str] = []
 
 def _load_place_names():
-    global _AC_NAMES, _PC_NAMES
+    global _AC_NAMES, _PC_NAMES, _DISTRICT_NAMES, _ZONE_NAMES
     if _AC_NAMES:
         return
     try:
@@ -128,9 +130,15 @@ def _load_place_names():
             _AC_NAMES += [r[0] for r in cur.fetchall()]
             cur.execute("SELECT DISTINCT pc_name FROM mh_results WHERE pc_name IS NOT NULL")
             _PC_NAMES += [r[0] for r in cur.fetchall()]
+            cur.execute("SELECT DISTINCT district FROM mh_results WHERE district IS NOT NULL")
+            _DISTRICT_NAMES += [r[0] for r in cur.fetchall()]
+            cur.execute("SELECT DISTINCT zone FROM mh_results WHERE zone IS NOT NULL")
+            _ZONE_NAMES += [r[0] for r in cur.fetchall()]
             con.close()
-        _AC_NAMES = list(set(_AC_NAMES))
-        _PC_NAMES = list(set(_PC_NAMES))
+        _AC_NAMES       = list(set(_AC_NAMES))
+        _PC_NAMES       = list(set(_PC_NAMES))
+        _DISTRICT_NAMES = list(set(_DISTRICT_NAMES))
+        _ZONE_NAMES     = list(set(_ZONE_NAMES))
     except:
         pass
 
@@ -149,27 +157,48 @@ _STOPWORDS = {
 }
 
 def _fuzzy_resolve_places(query: str) -> list[str]:
-    """Return hint strings for any AC/PC names found via fuzzy match."""
+    """Return hint strings for any AC/PC/district/zone names found via fuzzy match."""
     _load_place_names()
     hints = []
-    # Extract candidate tokens: 4+ char words not in stopwords
-    tokens = re.findall(r'\b[a-zA-Z]{4,}\b', query)
-    tokens = [t.upper() for t in tokens if t.lower() not in _STOPWORDS]
-
     seen = set()
-    for token in tokens:
-        # Try AC names
+
+    # ── District & Zone: original-case tokens + fuzz.ratio (best for short names) ──
+    words_orig = re.findall(r'\b[a-zA-Z]{4,}\b', query)
+    words_orig = [w for w in words_orig if w.lower() not in _STOPWORDS]
+    all_words  = re.findall(r'\b[a-zA-Z]+\b', query)
+    bigrams    = [f"{all_words[i]} {all_words[i+1]}" for i in range(len(all_words) - 1)]
+    # Add trigrams for "East Vidarbha region" etc.
+    trigrams   = [f"{all_words[i]} {all_words[i+1]} {all_words[i+2]}" for i in range(len(all_words) - 2)]
+    geo_tokens = words_orig + bigrams + trigrams
+
+    for token in geo_tokens:
+        if _DISTRICT_NAMES:
+            m, s, _ = process.extractOne(token, _DISTRICT_NAMES, scorer=fuzz.ratio)
+            if s >= 82 and m not in seen:
+                seen.add(m)
+                hints.append(f"[DISTRICT: use district='{m}' in SQL]")
+
+        if _ZONE_NAMES:
+            m, s, _ = process.extractOne(token, _ZONE_NAMES, scorer=fuzz.ratio)
+            if s >= 82 and m not in seen:
+                seen.add(m)
+                hints.append(f"[ZONE: use zone='{m}' in SQL]")
+
+    # ── AC & PC: UPPERCASE tokens + fuzz.WRatio (best for long AC names) ──
+    tokens_upper = [t.upper() for t in words_orig]
+    for token in tokens_upper:
         if _AC_NAMES:
-            match, score, _ = process.extractOne(token, _AC_NAMES, scorer=fuzz.WRatio)
-            if score >= 82 and match not in seen:
-                seen.add(match)
-                hints.append(f"[AC NAME: use ac_name LIKE '%{match}%' in SQL]")
-        # Try PC names
+            m, s, _ = process.extractOne(token, _AC_NAMES, scorer=fuzz.WRatio)
+            if s >= 88 and m not in seen:
+                seen.add(m)
+                hints.append(f"[AC NAME: use ac_name LIKE '%{m}%' in SQL]")
+
         if _PC_NAMES:
-            match_pc, score_pc, _ = process.extractOne(token, _PC_NAMES, scorer=fuzz.WRatio)
-            if score_pc >= 82 and match_pc not in seen:
-                seen.add(match_pc)
-                hints.append(f"[PC NAME: use pc_name LIKE '%{match_pc}%' in SQL]")
+            m, s, _ = process.extractOne(token, _PC_NAMES, scorer=fuzz.WRatio)
+            if s >= 88 and m not in seen:
+                seen.add(m)
+                hints.append(f"[PC NAME: use pc_name LIKE '%{m}%' in SQL]")
+
     return hints
 
 
