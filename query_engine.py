@@ -67,6 +67,52 @@ def _call(system: str, user: str, temperature: float, model: str = None) -> str:
     raise RuntimeError("All Groq keys rate-limited and no Gemini key available.")
 
 
+# ── Layer 0: Schema Grounding ─────────────────────────────────────────────────
+def _schema_ground(db_path: str) -> str:
+    """
+    Fetch actual distinct values from DB for key columns.
+    Injected into SQL prompt so LLM writes against real values, not assumptions.
+    Fails silently — returns empty string if anything goes wrong.
+    """
+    try:
+        con = sqlite3.connect(db_path)
+        cur = con.cursor()
+
+        def distinct(col, table="mh_results", where=""):
+            q = f"SELECT DISTINCT {col} FROM {table}"
+            if where:
+                q += f" WHERE {where}"
+            cur.execute(q)
+            return sorted([r[0] for r in cur.fetchall() if r[0] is not None])
+
+        years      = distinct("year")
+        eltypes    = distinct("el_type")
+        alliances  = distinct("alliance")
+        districts  = distinct("district")
+        zones      = distinct("zone")
+        parties    = distinct("party")
+        # Parties with NULL alliance in 2024 AE (edge-case awareness)
+        null_alliance_parties = distinct("party", where="year=2024 AND el_type='AE' AND alliance IS NULL AND won=1")
+
+        con.close()
+
+        lines = [
+            "\n=== SCHEMA GROUNDING — ACTUAL VALUES IN THIS DB ===",
+            f"years:     {years}",
+            f"el_type:   {eltypes}",
+            f"alliance:  {alliances} (NULL = unaligned/independent)",
+            f"districts: {districts}",
+            f"zones:     {zones}",
+            f"parties (sample, use LIKE): {parties[:40]}",
+        ]
+        if null_alliance_parties:
+            lines.append(f"WARNING — 2024 AE winners with NULL alliance (truly unaligned): {null_alliance_parties}")
+        lines.append("Use ONLY these exact values for filtering — never assume or invent values.")
+        return "\n".join(lines)
+    except Exception:
+        return ""  # silent fail — pipeline continues as normal
+
+
 # ── DB Router ─────────────────────────────────────────────────────────────────
 def _route_db(question: str) -> str:
     """
@@ -252,6 +298,8 @@ NULL SAFETY:
 - IS NOT NULL filters before comparing
 
 DEFAULT LIMIT: {C.SQL_DEFAULT_LIMIT} unless user specifies otherwise
+
+{_schema_ground(db_path)}
 """
 
 
