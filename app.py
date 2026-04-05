@@ -616,9 +616,6 @@ else:
             if cite:
                 st.markdown(cite, unsafe_allow_html=True)
 
-            if msg.get("sql"):
-                with st.expander("View SQL"):
-                    st.code(msg["sql"], language="sql")
 
     # Suggestion pills
     st.markdown("<div style='height:4px'></div>", unsafe_allow_html=True)
