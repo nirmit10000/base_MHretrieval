@@ -8,6 +8,7 @@ party_resolver.py — Two jobs:
 import re
 import sqlite3
 import config as C
+from rapidfuzz import process, fuzz
 
 # ── Party name mappings ───────────────────────────────────────────────────────
 KNOWN = {
@@ -111,6 +112,67 @@ ELTYPE_MAP = {
 }
 
 
+# ── Place name cache (loaded once at startup) ─────────────────────────────────
+_AC_NAMES: list[str] = []
+_PC_NAMES: list[str] = []
+
+def _load_place_names():
+    global _AC_NAMES, _PC_NAMES
+    if _AC_NAMES:
+        return
+    try:
+        for db in (C.POST_2009_DB, C.FULL_DB):
+            con = sqlite3.connect(db)
+            cur = con.cursor()
+            cur.execute("SELECT DISTINCT ac_name FROM mh_results WHERE ac_name IS NOT NULL")
+            _AC_NAMES += [r[0] for r in cur.fetchall()]
+            cur.execute("SELECT DISTINCT pc_name FROM mh_results WHERE pc_name IS NOT NULL")
+            _PC_NAMES += [r[0] for r in cur.fetchall()]
+            con.close()
+        _AC_NAMES = list(set(_AC_NAMES))
+        _PC_NAMES = list(set(_PC_NAMES))
+    except:
+        pass
+
+_STOPWORDS = {
+    "the","and","for","with","from","that","this","over","list","data",
+    "where","winner","winners","details","results","elections","election",
+    "years","across","their","party","seats","votes","margin","vidhan",
+    "sabha","lok","assembly","constituency","constituencies","total",
+    "maharashtra","give","show","find","tell","what","which","does",
+    "highest","lowest","most","least","best","worst","many","much",
+    "north","south","east","west","central","rural","urban","rural",
+    "level","wise","wise","seat","seats","vote","votes","lead","leads",
+    "trail","trails","swing","share","count","number","name","names",
+    "candidate","candidates","district","zone","region","area","state",
+    "percent","percentage","turnout","incumbency","alliance","block",
+}
+
+def _fuzzy_resolve_places(query: str) -> list[str]:
+    """Return hint strings for any AC/PC names found via fuzzy match."""
+    _load_place_names()
+    hints = []
+    # Extract candidate tokens: 4+ char words not in stopwords
+    tokens = re.findall(r'\b[a-zA-Z]{4,}\b', query)
+    tokens = [t.upper() for t in tokens if t.lower() not in _STOPWORDS]
+
+    seen = set()
+    for token in tokens:
+        # Try AC names
+        if _AC_NAMES:
+            match, score, _ = process.extractOne(token, _AC_NAMES, scorer=fuzz.WRatio)
+            if score >= 82 and match not in seen:
+                seen.add(match)
+                hints.append(f"[AC NAME: use ac_name LIKE '%{match}%' in SQL]")
+        # Try PC names
+        if _PC_NAMES:
+            match_pc, score_pc, _ = process.extractOne(token, _PC_NAMES, scorer=fuzz.WRatio)
+            if score_pc >= 82 and match_pc not in seen:
+                seen.add(match_pc)
+                hints.append(f"[PC NAME: use pc_name LIKE '%{match_pc}%' in SQL]")
+    return hints
+
+
 def _all_db_parties() -> list[str]:
     try:
         con = sqlite3.connect(C.POST_2009_DB)
@@ -165,6 +227,9 @@ def resolve(user_query: str) -> str:
     # If query mentions leads/trails
     if any(p in lower for p in ["leads", "trails", "lead trail", "leading", "trailing"]):
         hints.append("[GEO: leads/trails means show top candidates per AC — winner (rank=1) and runner-up (rank=2) per ac_name]")
+
+    # ── Place name fuzzy resolution ───────────────────────────────────────────
+    hints += _fuzzy_resolve_places(user_query)
 
     if hints:
         return user_query + "\n" + "\n".join(hints)
