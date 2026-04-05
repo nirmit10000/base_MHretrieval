@@ -169,6 +169,14 @@ ALWAYS SELECT ALL RELEVANT COLUMNS:
 - For swing queries include: both years' vote_share + computed swing value
 - For aggregations include: grouped column + all computed metrics
 
+NAME MATCHING — ALWAYS USE LIKE, NEVER EXACT MATCH:
+- AC names: always LIKE '%KHADAKWASLA%' style — never exact = 'KHADAKWASLA'
+  (DB stores UPPERCASE names, spellings may vary: e.g. KHADAKWASALA not KHADAKWASLA)
+- PC names: always LIKE '%PUNE%' style
+- Candidate names: always LIKE '%FADNAVIS%' style
+- District/zone names: always LIKE '%VIDARBHA%' style
+- UPPERCASE the search term in LIKE patterns to match DB storage
+
 PARTY MATCHING:
 - Always LIKE '%BJP%' — never exact match
 - Mahayuti = NDA alliance in 2024 → filter alliance='NDA' AND year=2024
