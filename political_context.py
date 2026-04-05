@@ -15,8 +15,9 @@ ELECTORAL_CONTEXT = [
     "MNS (Maharashtra Navnirman Sena) was founded by Raj Thackeray in 2006 after splitting from SHS.",
     "INC and NCP formed Congress-NCP alliance from 1999 onwards in Maharashtra.",
     "Mahayuti = BJP + SHS (Shinde) + NCP (Ajit) — ruling alliance in 2024.",
-    "MVA = Maha Vikas Aghadi = INC + SHS (UBT) + NCP (SP) — opposition alliance in 2024.",
-    "In 2024 data, alliance column captures NDA / INDI / Others accurately.",
+    "MVA = Maha Vikas Aghadi = INC + SHS (UBT) + NCP (SP) + SP (Samajwadi Party) — opposition alliance in 2024 MH.",
+    "In 2024 data, alliance column is 'NDA', 'INDI', or NULL (for truly independent/unaligned candidates).",
+    "SP (Samajwadi Party) contested 2024 MH AE as part of MVA/INDI — their alliance value is correctly set to 'INDI' in DB.",
     "Vidarbha region = Nagpur, Amravati divisions — historically Congress stronghold.",
     "Western Maharashtra = Pune, Satara, Kolhapur — NCP stronghold historically.",
     "Mumbai = mixed — SHS/BJP strong in North, INC/NCP competitive in South and East.",
@@ -77,7 +78,9 @@ GEOGRAPHY_CONTEXT = [
 # ── Query Patterns ────────────────────────────────────────────────────────────
 QUERY_PATTERNS = [
     "When user asks about 'Mahayuti' → use alliance='NDA' AND year=2024.",
-    "When user asks about 'MVA' or 'Maha Vikas Aghadi' → use alliance='INDI' AND year=2024.",
+    "When user asks about 'MVA' or 'Maha Vikas Aghadi' or 'INDI' → use alliance='INDI' AND year=2024.",
+    "When user asks for BOTH NDA and MVA results together → use alliance IN ('NDA','INDI') AND year=2024, NOT just one alliance. Return results for both.",
+    "When counting seats by alliance in 2024 → GROUP BY alliance WHERE alliance IN ('NDA','INDI') — always show both in same query.",
     "When user asks about 'Shiv Sena' without faction → use LIKE '%SHS%'.",
     "When user asks about 'NCP' without faction → use LIKE '%NCP%'.",
     "When user asks 'AC-wise leads' in a PC → el_type='GE', filter by pc_name, show all candidates ranked per AC.",
