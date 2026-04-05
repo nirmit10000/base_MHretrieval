@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(sqlite3 \"d:/Varahe/political-llm_v2/electoral_mh_post2009.db\" \".schema\")"
+    ]
+  }
+}

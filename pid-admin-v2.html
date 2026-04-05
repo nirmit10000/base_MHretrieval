@@ -1,0 +1,1497 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>PID — Tenant Admin Panel</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --bg: #f5f6f8;
+  --surface: #ffffff;
+  --surface2: #f9fafb;
+  --surface3: #f0f2f5;
+  --border: #e4e7ec;
+  --border2: #d0d5dd;
+  --accent: #1a6ef5;
+  --accent-light: #eff4ff;
+  --accent-dark: #1558d6;
+  --red: #d92d20;
+  --red-light: #fef3f2;
+  --red-mid: #fda29b;
+  --green: #027a48;
+  --green-light: #ecfdf3;
+  --orange: #b54708;
+  --orange-light: #fffaeb;
+  --purple: #5925dc;
+  --purple-light: #f4f3ff;
+  --text: #101828;
+  --text2: #344054;
+  --text3: #667085;
+  --text4: #98a2b3;
+  --shadow-sm: 0 1px 2px rgba(16,24,40,.05);
+  --shadow: 0 1px 3px rgba(16,24,40,.1), 0 1px 2px rgba(16,24,40,.06);
+  --shadow-md: 0 4px 8px -2px rgba(16,24,40,.1), 0 2px 4px -2px rgba(16,24,40,.06);
+  --shadow-lg: 0 12px 16px -4px rgba(16,24,40,.08), 0 4px 6px -2px rgba(16,24,40,.03);
+  --mono: 'IBM Plex Mono', monospace;
+  --sans: 'Inter', sans-serif;
+  --radius: 8px;
+  --radius-sm: 6px;
+  --radius-lg: 12px;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; overflow: hidden; }
+body { background: var(--bg); color: var(--text); font-family: var(--sans); font-size: 14px; display: flex; }
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 10px; }
+
+/* ── SIDEBAR ── */
+.sidebar {
+  width: 240px; min-height: 100vh; background: var(--surface);
+  border-right: 1px solid var(--border); display: flex; flex-direction: column;
+  flex-shrink: 0; z-index: 20;
+}
+.sid-logo { padding: 20px 16px 16px; border-bottom: 1px solid var(--border); }
+.sid-logo .pid-tag { display: inline-flex; align-items: center; gap: 6px; background: var(--accent-light); color: var(--accent); font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 20px; margin-bottom: 8px; }
+.sid-logo .name { font-size: 16px; font-weight: 700; color: var(--text); letter-spacing: -.02em; }
+.sid-logo .sub { font-family: var(--mono); font-size: 10px; color: var(--text4); margin-top: 2px; }
+.sid-role { margin: 12px; padding: 10px 12px; background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius); }
+.sid-role .rl { font-size: 10px; font-weight: 500; color: var(--text4); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 2px; }
+.sid-role .rn { font-size: 13px; font-weight: 600; color: var(--text); }
+.sid-role .re { font-size: 11px; color: var(--text3); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.nav-sec { padding: 14px 16px 4px; font-size: 10px; font-weight: 600; color: var(--text4); text-transform: uppercase; letter-spacing: .07em; }
+.nav-item {
+  display: flex; align-items: center; gap: 9px; padding: 8px 12px; margin: 1px 6px;
+  cursor: pointer; font-size: 13px; font-weight: 500; color: var(--text3);
+  border-radius: var(--radius-sm); transition: all .13s;
+}
+.nav-item:hover { color: var(--text); background: var(--surface3); }
+.nav-item.active { color: var(--accent); background: var(--accent-light); font-weight: 600; }
+.nav-item .ico { font-size: 15px; width: 20px; text-align: center; flex-shrink: 0; }
+.nav-badge { margin-left: auto; background: var(--red); color: #fff; font-size: 10px; font-weight: 600; padding: 1px 6px; border-radius: 20px; }
+.nav-badge.warn { background: var(--orange); }
+.sid-bottom { margin-top: auto; padding: 12px 16px; border-top: 1px solid var(--border); font-size: 11px; color: var(--text4); }
+.sid-bottom strong { color: var(--text3); }
+
+/* ── MAIN ── */
+.main { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-width: 0; }
+.topbar { height: 56px; background: var(--surface); border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 24px; gap: 12px; flex-shrink: 0; box-shadow: var(--shadow-sm); }
+.topbar-left { flex: 1; }
+.topbar-title { font-size: 15px; font-weight: 700; color: var(--text); }
+.topbar-crumb { font-size: 11px; color: var(--text4); margin-top: 1px; }
+.topbar-crumb span { color: var(--text3); }
+.tb-btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; background: var(--accent); color: #fff; font-family: var(--sans); font-size: 13px; font-weight: 600; border: none; border-radius: var(--radius-sm); cursor: pointer; transition: background .13s; white-space: nowrap; box-shadow: var(--shadow-sm); }
+.tb-btn:hover { background: var(--accent-dark); }
+.tb-btn.ghost { background: var(--surface); color: var(--text2); border: 1px solid var(--border2); }
+.tb-btn.ghost:hover { background: var(--surface2); }
+.content { flex: 1; overflow-y: auto; padding: 24px; }
+
+/* ── SECTIONS ── */
+.section { display: none; }
+.section.active { display: block; }
+
+/* ── PAGE HEADER ── */
+.page-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 22px; }
+.page-header .ph-left h1 { font-size: 20px; font-weight: 700; color: var(--text); letter-spacing: -.02em; }
+.page-header .ph-left p { font-size: 13px; color: var(--text3); margin-top: 3px; }
+
+/* ── STAT CARDS ── */
+.stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 22px; }
+.stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 18px; box-shadow: var(--shadow-sm); }
+.stat-card .sc-val { font-size: 26px; font-weight: 700; letter-spacing: -.03em; margin-bottom: 2px; }
+.stat-card .sc-label { font-size: 12px; font-weight: 500; color: var(--text3); }
+.stat-card .sc-sub { font-size: 11px; color: var(--text4); margin-top: 4px; }
+.stat-card.blue .sc-val { color: var(--accent); }
+.stat-card.green .sc-val { color: var(--green); }
+.stat-card.red .sc-val { color: var(--red); }
+.stat-card.orange .sc-val { color: var(--orange); }
+
+/* ── TABLE ── */
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); overflow: hidden; }
+.card-header { padding: 14px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
+.card-header h3 { font-size: 14px; font-weight: 600; color: var(--text); }
+.card-header .ch-count { font-size: 11px; color: var(--text3); background: var(--surface3); padding: 2px 8px; border-radius: 20px; font-weight: 500; }
+.search-box { display: flex; align-items: center; gap: 7px; background: var(--surface); border: 1px solid var(--border2); border-radius: var(--radius-sm); padding: 7px 10px; margin-left: auto; transition: border-color .13s; }
+.search-box:focus-within { border-color: var(--accent); }
+.search-box input { background: none; border: none; outline: none; font-family: var(--sans); font-size: 12px; color: var(--text); width: 180px; }
+.search-box input::placeholder { color: var(--text4); }
+.search-box .si { font-size: 13px; color: var(--text4); }
+
+table { width: 100%; border-collapse: collapse; }
+thead th { padding: 10px 20px; font-size: 11px; font-weight: 600; color: var(--text3); text-align: left; border-bottom: 1px solid var(--border); background: var(--surface2); white-space: nowrap; }
+tbody tr { border-bottom: 1px solid var(--border); transition: background .1s; }
+tbody tr:last-child { border-bottom: none; }
+tbody tr:hover { background: var(--surface2); }
+tbody td { padding: 12px 20px; font-size: 13px; color: var(--text2); vertical-align: middle; }
+.uid-text { font-family: var(--mono); font-size: 10px; color: var(--text4); display: block; margin-top: 1px; }
+
+/* ── BADGES ── */
+.badge { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 500; padding: 3px 8px; border-radius: 20px; white-space: nowrap; }
+.badge .dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
+.badge.active { background: var(--green-light); color: var(--green); }
+.badge.blocked { background: var(--red-light); color: var(--red); }
+.badge.pending { background: var(--orange-light); color: var(--orange); }
+
+.tag-pill { display: inline-flex; align-items: center; font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 20px; white-space: nowrap; }
+.tag-pill.national { background: var(--accent-light); color: var(--accent); }
+.tag-pill.state { background: #f0fdf4; color: #166534; }
+.tag-pill.zone { background: #fdf4ff; color: #6b21a8; }
+.tag-pill.district { background: #fff7ed; color: #9a3412; }
+.tag-pill.pc { background: #fef2f2; color: #991b1b; }
+.tag-pill.ac { background: #f0f9ff; color: #075985; }
+
+/* ── AVATAR ── */
+.avatar { width: 30px; height: 30px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+
+/* ── ACTION BUTTONS ── */
+.action-row { display: flex; gap: 6px; align-items: center; }
+.act-btn { padding: 5px 10px; font-family: var(--sans); font-size: 11px; font-weight: 600; border-radius: var(--radius-sm); border: 1px solid; cursor: pointer; transition: all .13s; background: none; }
+.act-btn.primary { color: var(--accent); border-color: var(--accent); }
+.act-btn.primary:hover { background: var(--accent-light); }
+.act-btn.warn { color: var(--orange); border-color: #fec84b; }
+.act-btn.warn:hover { background: var(--orange-light); }
+.act-btn.danger { color: var(--red); border-color: var(--red-mid); }
+.act-btn.danger:hover { background: var(--red-light); }
+.act-btn.success { color: var(--green); border-color: #6ce9a6; }
+.act-btn.success:hover { background: var(--green-light); }
+
+/* ── HOVER TOOLTIP ── */
+.hover-wrap { position: relative; }
+.hover-tip {
+  position: absolute; right: 0; top: calc(100% + 4px); z-index: 200;
+  background: var(--surface); border: 1px solid var(--border2); border-radius: var(--radius);
+  padding: 14px 16px; width: 300px; box-shadow: var(--shadow-lg);
+  display: none; pointer-events: none;
+}
+.hover-wrap:hover .hover-tip { display: block; }
+.ht-title { font-size: 10px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: .07em; margin-bottom: 10px; }
+.ht-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; font-size: 12px; }
+.ht-key { color: var(--text3); }
+.ht-yes { font-size: 11px; font-weight: 600; color: var(--green); }
+.ht-no { font-size: 11px; font-weight: 500; color: var(--text4); }
+.ht-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 3px; }
+.ht-tag { font-family: var(--mono); font-size: 9px; background: var(--surface3); border: 1px solid var(--border); color: var(--text3); padding: 2px 6px; border-radius: 4px; }
+.ht-section { margin-bottom: 8px; }
+
+/* ── MODALS ── */
+.modal-bg { position: fixed; inset: 0; background: rgba(16,24,40,.4); z-index: 300; display: none; align-items: center; justify-content: center; backdrop-filter: blur(2px); }
+.modal-bg.open { display: flex; }
+.modal { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); width: 480px; max-width: 95vw; max-height: 90vh; overflow-y: auto; box-shadow: var(--shadow-lg); }
+.modal.wide { width: 720px; }
+.modal-hdr { padding: 20px 22px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.modal-hdr h2 { font-size: 16px; font-weight: 700; color: var(--text); }
+.modal-hdr .mh-sub { font-size: 12px; color: var(--text3); margin-top: 3px; }
+.close-btn { background: none; border: none; color: var(--text4); font-size: 18px; cursor: pointer; padding: 2px 4px; border-radius: 4px; line-height: 1; flex-shrink: 0; }
+.close-btn:hover { background: var(--surface3); color: var(--text2); }
+.modal-body { padding: 20px 22px; }
+.modal-footer { padding: 14px 22px; border-top: 1px solid var(--border); display: flex; gap: 10px; justify-content: flex-end; }
+
+/* ── FORM ── */
+.form-row { margin-bottom: 16px; }
+.form-row label { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; color: var(--text2); margin-bottom: 6px; }
+.form-row input, .form-row select {
+  width: 100%; background: var(--surface); border: 1px solid var(--border2);
+  border-radius: var(--radius-sm); padding: 9px 12px; color: var(--text);
+  font-family: var(--sans); font-size: 13px; outline: none; transition: border-color .13s; box-shadow: var(--shadow-sm);
+}
+.form-row input:focus, .form-row select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(26,110,245,.1); }
+.form-row .hint { font-size: 11px; color: var(--text4); margin-top: 5px; }
+.form-row select option { background: var(--surface); }
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+
+/* ── BTN ── */
+.btn { padding: 9px 18px; font-family: var(--sans); font-size: 13px; font-weight: 600; border-radius: var(--radius-sm); border: none; cursor: pointer; transition: all .13s; }
+.btn.primary { background: var(--accent); color: #fff; }
+.btn.primary:hover { background: var(--accent-dark); }
+.btn.danger { background: var(--red); color: #fff; }
+.btn.danger:hover { background: #b42318; }
+.btn.ghost { background: var(--surface); color: var(--text2); border: 1px solid var(--border2); }
+.btn.ghost:hover { background: var(--surface2); }
+
+/* ── INFO ICON TOOLTIP ── */
+.info-icon { display: inline-flex; align-items: center; justify-content: center; width: 16px; height: 16px; border-radius: 50%; background: var(--surface3); color: var(--text4); font-size: 10px; font-weight: 700; cursor: help; border: 1px solid var(--border); flex-shrink: 0; position: relative; }
+.info-icon:hover { background: var(--accent-light); color: var(--accent); border-color: var(--accent); }
+.info-icon .tooltip {
+  position: absolute; bottom: calc(100% + 6px); left: 50%; transform: translateX(-50%);
+  background: var(--text); color: #fff; font-size: 11px; font-weight: 400;
+  padding: 6px 10px; border-radius: 6px; white-space: nowrap; display: none;
+  font-family: var(--sans); z-index: 400; box-shadow: var(--shadow-md);
+}
+.info-icon .tooltip::after { content: ''; position: absolute; top: 100%; left: 50%; transform: translateX(-50%); border: 5px solid transparent; border-top-color: var(--text); }
+.info-icon:hover .tooltip { display: block; }
+
+/* ── ACCESS CONTROL ── */
+.ac-page { display: grid; grid-template-columns: 280px 1fr; gap: 20px; align-items: start; }
+.user-picker { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 16px; box-shadow: var(--shadow-sm); }
+.user-picker h3 { font-size: 13px; font-weight: 700; margin-bottom: 12px; color: var(--text); }
+.user-search { display: flex; align-items: center; gap: 7px; background: var(--surface2); border: 1px solid var(--border2); border-radius: var(--radius-sm); padding: 8px 10px; margin-bottom: 10px; }
+.user-search input { flex: 1; background: none; border: none; outline: none; font-size: 12px; color: var(--text); }
+.user-search input::placeholder { color: var(--text4); }
+.user-list { max-height: 360px; overflow-y: auto; }
+.user-list-item { display: flex; align-items: center; gap: 9px; padding: 8px 10px; border-radius: var(--radius-sm); cursor: pointer; transition: background .1s; }
+.user-list-item:hover { background: var(--surface3); }
+.user-list-item.selected { background: var(--accent-light); }
+.user-list-item .uname { font-size: 12px; font-weight: 600; color: var(--text); }
+.user-list-item .uemail { font-size: 10px; color: var(--text4); }
+
+.policy-editor { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 20px; box-shadow: var(--shadow-sm); }
+.pe-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid var(--border); }
+.pe-header .pe-user { font-size: 14px; font-weight: 700; color: var(--text); }
+.pe-header .pe-uid { font-family: var(--mono); font-size: 10px; color: var(--text4); margin-top: 2px; }
+.pe-frozen { pointer-events: none; opacity: .7; }
+
+/* PAGE SECTIONS in policy editor */
+.ps-block { margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid var(--border); }
+.ps-block:last-of-type { border-bottom: none; margin-bottom: 0; }
+.ps-title { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+.ps-title h4 { font-size: 13px; font-weight: 700; color: var(--text); }
+.ps-title .order-num { width: 20px; height: 20px; border-radius: 50%; background: var(--surface3); color: var(--text3); font-size: 10px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+
+/* TOGGLE */
+.toggle-row { display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius); }
+.toggle-row .tr-left .tr-name { font-size: 13px; font-weight: 600; color: var(--text); }
+.toggle-row .tr-left .tr-desc { font-size: 11px; color: var(--text3); margin-top: 2px; }
+.toggle { position: relative; width: 40px; height: 22px; flex-shrink: 0; }
+.toggle input { opacity: 0; width: 0; height: 0; }
+.toggle-slider { position: absolute; inset: 0; background: var(--border2); border-radius: 22px; cursor: pointer; transition: .2s; }
+.toggle-slider::before { content: ''; position: absolute; width: 16px; height: 16px; left: 3px; bottom: 3px; background: #fff; border-radius: 50%; transition: .2s; box-shadow: var(--shadow-sm); }
+.toggle input:checked + .toggle-slider { background: var(--accent); }
+.toggle input:checked + .toggle-slider::before { transform: translateX(18px); }
+
+/* TAG INPUT */
+.tag-input-wrap { border: 1px solid var(--border2); border-radius: var(--radius); background: var(--surface); overflow: hidden; }
+.tag-search-row { display: flex; align-items: center; gap: 8px; padding: 9px 12px; border-bottom: 1px solid var(--border); position: relative; }
+.tag-search-row input { flex: 1; border: none; outline: none; font-size: 12px; color: var(--text); background: none; }
+.tag-search-row input::placeholder { color: var(--text4); }
+.tag-search-row .si { color: var(--text4); font-size: 13px; flex-shrink: 0; }
+.tag-dropdown { position: absolute; top: 100%; left: 0; right: 0; background: var(--surface); border: 1px solid var(--border2); border-top: none; border-radius: 0 0 var(--radius) var(--radius); max-height: 180px; overflow-y: auto; z-index: 50; box-shadow: var(--shadow-md); display: none; }
+.tag-dropdown.open { display: block; }
+.tag-dropdown-item { padding: 8px 12px; font-size: 12px; cursor: pointer; transition: background .1s; display: flex; align-items: center; justify-content: space-between; }
+.tag-dropdown-item:hover { background: var(--accent-light); color: var(--accent); }
+.tag-dropdown-item.selected { color: var(--text4); cursor: default; }
+.tag-dropdown-item.selected:hover { background: transparent; color: var(--text4); }
+.tags-area { padding: 10px 12px; display: flex; flex-wrap: wrap; gap: 6px; min-height: 42px; }
+.tag-item { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 500; padding: 4px 9px 4px 10px; border-radius: 20px; background: var(--accent-light); color: var(--accent); border: 1px solid #bfdbfe; }
+.tag-item .xt { background: none; border: none; color: var(--accent); cursor: pointer; font-size: 13px; padding: 0; line-height: 1; opacity: .7; }
+.tag-item .xt:hover { opacity: 1; }
+.tag-item.state-tag { background: #f0fdf4; color: #166534; border-color: #bbf7d0; }
+.tag-item.zone-tag { background: #fdf4ff; color: #6b21a8; border-color: #e9d5ff; }
+.tag-item.district-tag { background: #fff7ed; color: #9a3412; border-color: #fed7aa; }
+.tag-item.pc-tag { background: #fef2f2; color: #991b1b; border-color: #fecaca; }
+.tag-item.ac-tag { background: #f0f9ff; color: #075985; border-color: #bae6fd; }
+.tag-actions-row { padding: 8px 12px; border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; background: var(--surface2); }
+.tag-actions-row .select-all-btn { font-size: 11px; font-weight: 600; color: var(--accent); background: none; border: none; cursor: pointer; padding: 3px 0; }
+.tag-actions-row .select-all-btn:hover { text-decoration: underline; }
+.tag-actions-row .reset-btn { font-size: 11px; font-weight: 600; color: var(--red); background: none; border: none; cursor: pointer; padding: 3px 0; }
+.tag-actions-row .reset-btn:hover { text-decoration: underline; }
+.tag-count { font-size: 10px; color: var(--text4); }
+
+/* FULL SCREEN POPUP (state > constituencies) */
+.popup-bg { position: fixed; inset: 0; background: rgba(16,24,40,.5); z-index: 250; display: none; align-items: center; justify-content: center; backdrop-filter: blur(3px); }
+.popup-bg.open { display: flex; }
+.popup-panel { background: var(--surface); border-radius: var(--radius-lg); width: 760px; max-width: 96vw; height: 80vh; display: flex; flex-direction: column; box-shadow: var(--shadow-lg); border: 1px solid var(--border); }
+.popup-hdr { padding: 18px 22px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+.popup-hdr .ph-title { font-size: 16px; font-weight: 700; color: var(--text); }
+.popup-hdr .ph-sub { font-size: 12px; color: var(--text3); margin-top: 2px; }
+.popup-body { flex: 1; overflow: hidden; display: flex; flex-direction: column; padding: 18px 22px; gap: 14px; }
+.popup-search { display: flex; align-items: center; gap: 8px; background: var(--surface2); border: 1px solid var(--border2); border-radius: var(--radius); padding: 10px 14px; }
+.popup-search input { flex: 1; background: none; border: none; outline: none; font-size: 13px; color: var(--text); }
+.popup-search input::placeholder { color: var(--text4); }
+.popup-results { flex: 1; overflow-y: auto; }
+.popup-result-item { display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; border-radius: var(--radius-sm); cursor: pointer; transition: background .1s; margin-bottom: 2px; }
+.popup-result-item:hover { background: var(--surface3); }
+.popup-result-item.selected { background: var(--accent-light); }
+.popup-result-item .pri-name { font-size: 13px; font-weight: 600; color: var(--text); }
+.popup-result-item .pri-num { font-family: var(--mono); font-size: 11px; color: var(--text4); }
+.popup-result-item .pri-check { color: var(--accent); font-size: 16px; }
+.popup-footer { padding: 14px 22px; border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+.popup-selected-tags { display: flex; flex-wrap: wrap; gap: 6px; flex: 1; margin-right: 14px; max-height: 60px; overflow-y: auto; }
+.popup-no-results { text-align: center; padding: 32px 16px; color: var(--text4); font-size: 13px; }
+
+/* RESET BUTTON */
+.reset-btn-top { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 600; color: var(--red); background: var(--red-light); border: 1px solid var(--red-mid); padding: 5px 10px; border-radius: var(--radius-sm); cursor: pointer; transition: all .13s; }
+.reset-btn-top:hover { background: #fee2e2; }
+
+/* ── AUDIT LOG ── */
+.audit-tabs { display: flex; gap: 4px; background: var(--surface3); padding: 4px; border-radius: var(--radius); margin-bottom: 18px; width: fit-content; }
+.audit-tab { padding: 7px 14px; font-size: 12px; font-weight: 600; color: var(--text3); border-radius: 6px; cursor: pointer; transition: all .13s; }
+.audit-tab.active { background: var(--surface); color: var(--text); box-shadow: var(--shadow-sm); }
+.audit-tab:not(.active):hover { color: var(--text2); }
+.audit-content { display: none; }
+.audit-content.active { display: block; }
+.alert-banner { padding: 12px 16px; background: var(--red-light); border: 1px solid #fecaca; border-radius: var(--radius); margin-bottom: 16px; display: flex; align-items: center; gap: 10px; font-size: 12px; color: var(--red); font-weight: 500; }
+
+/* ── OVERVIEW ── */
+.ov-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+.ov-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--shadow-sm); }
+.ov-card-hdr { padding: 12px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px; background: var(--surface2); }
+.ov-card-hdr .oh { font-size: 13px; font-weight: 700; color: var(--text); }
+.ov-card-hdr .oc { font-size: 11px; color: var(--text4); background: var(--surface3); padding: 2px 7px; border-radius: 20px; margin-left: auto; }
+.ov-user-row { display: flex; align-items: center; gap: 10px; padding: 10px 16px; border-bottom: 1px solid var(--border); }
+.ov-user-row:last-child { border-bottom: none; }
+.ov-name { font-size: 12px; font-weight: 600; color: var(--text); }
+.ov-uid { font-family: var(--mono); font-size: 10px; color: var(--text4); }
+
+.ov-state-block { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); margin-bottom: 12px; overflow: hidden; box-shadow: var(--shadow-sm); }
+.ov-state-hdr { padding: 11px 16px; border-bottom: 1px solid var(--border); background: var(--surface2); display: flex; align-items: center; gap: 8px; }
+.ov-state-hdr .sn { font-size: 13px; font-weight: 700; color: var(--text); flex: 1; }
+.ov-state-hdr .sc { font-size: 11px; color: var(--text4); }
+.ov-state-body { padding: 4px 0; }
+.ov-state-row { display: flex; align-items: center; gap: 10px; padding: 8px 16px; }
+
+/* ── TOAST ── */
+#toast { position: fixed; bottom: 24px; right: 24px; background: var(--text); color: #fff; border-radius: var(--radius); padding: 12px 18px; font-size: 13px; z-index: 999; display: none; box-shadow: var(--shadow-lg); max-width: 340px; }
+
+/* ── EMPTY ── */
+.empty-state { text-align: center; padding: 44px 24px; }
+.empty-state .ei { font-size: 30px; margin-bottom: 10px; }
+.empty-state .et { font-size: 14px; font-weight: 600; color: var(--text2); margin-bottom: 4px; }
+.empty-state .es { font-size: 12px; color: var(--text4); }
+
+/* ── INFO BOX ── */
+.info-box { background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 14px; font-size: 12px; color: var(--text3); }
+.info-box strong { color: var(--text); display: block; font-size: 13px; margin-bottom: 2px; }
+.info-box.warn { background: var(--orange-light); border-color: #fec84b; color: var(--orange); }
+.info-box.danger { background: var(--red-light); border-color: var(--red-mid); color: var(--red); }
+
+/* STATE SELECTOR inside popup - for zone/district/pc/ac */
+.state-selector { display: grid; grid-template-columns: 1fr 1fr; gap: 0; border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; height: 100%; }
+.state-selector .ss-left { border-right: 1px solid var(--border); overflow-y: auto; }
+.state-selector .ss-right { overflow-y: auto; padding: 12px; }
+.ss-search { padding: 10px 12px; border-bottom: 1px solid var(--border); position: sticky; top: 0; background: var(--surface); }
+.ss-search input { width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 7px 10px; font-size: 12px; outline: none; }
+.ss-state-item { padding: 9px 14px; font-size: 12px; font-weight: 500; cursor: pointer; transition: background .1s; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+.ss-state-item:hover { background: var(--surface2); }
+.ss-state-item.selected { background: var(--accent-light); color: var(--accent); font-weight: 700; }
+.ss-right-title { font-size: 11px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: .07em; margin-bottom: 10px; }
+.ss-item-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 10px; border-radius: var(--radius-sm); cursor: pointer; transition: background .1s; margin-bottom: 2px; }
+.ss-item-row:hover { background: var(--surface3); }
+.ss-item-row .ir-name { font-size: 12px; font-weight: 500; color: var(--text); }
+.ss-item-row .ir-num { font-family: var(--mono); font-size: 10px; color: var(--text4); }
+.ss-item-row.selected-item { background: var(--accent-light); }
+.ss-item-row.selected-item .ir-name { color: var(--accent); font-weight: 700; }
+
+/* zone simple search */
+.zone-tag { background: #fdf4ff; color: #6b21a8; border-color: #e9d5ff; }
+</style>
+</head>
+<body>
+
+<!-- ══════ SIDEBAR ══════ -->
+<aside class="sidebar">
+  <div class="sid-logo">
+    <div class="pid-tag">🗺️ PID</div>
+    <div class="name">Tenant Admin</div>
+    <div class="sub">admin_console · v0.2</div>
+  </div>
+  <div class="sid-role">
+    <div class="rl">Logged in as</div>
+    <div class="rn">Tenant Admin</div>
+    <div class="re">admin@consultancy.in</div>
+  </div>
+  <nav>
+    <div class="nav-sec">Management</div>
+    <div class="nav-item active" onclick="gotoSection('users')"><span class="ico">👥</span> All Users</div>
+    <div class="nav-item" onclick="gotoSection('access')"><span class="ico">🔐</span> Access Control</div>
+    <div class="nav-sec">Security &amp; Audit</div>
+    <div class="nav-item" onclick="gotoSection('audit')"><span class="ico">📋</span> Audit Logs <span class="nav-badge warn" id="audit-badge">3</span></div>
+    <div class="nav-sec">Intelligence</div>
+    <div class="nav-item" onclick="gotoSection('overview')"><span class="ico">🗺️</span> Access Overview</div>
+  </nav>
+  <div class="sid-bottom">Political Intelligence Dashboard &nbsp;·&nbsp; <strong>Tenant Layer</strong></div>
+</aside>
+
+<!-- ══════ MAIN ══════ -->
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-left">
+      <div class="topbar-title" id="tb-title">All Users</div>
+      <div class="topbar-crumb" id="tb-crumb"><span>PID</span> › Tenant Admin › <span>Users</span></div>
+    </div>
+    <button class="tb-btn ghost" id="tb-secondary" style="display:none;">Reset All Access</button>
+    <button class="tb-btn" onclick="openModal('create-modal')">＋ &nbsp;New User</button>
+  </div>
+  <div class="content">
+
+    <!-- ══════════════════════════ USERS ══════════════════════════ -->
+    <div class="section active" id="section-users">
+      <div class="page-header">
+        <div class="ph-left"><h1>All Users</h1><p>Hover a row to preview access. Click View Access to inspect or edit.</p></div>
+        <button class="tb-btn" onclick="openModal('create-modal')">＋ &nbsp;Add User</button>
+      </div>
+      <div class="stats-row">
+        <div class="stat-card blue"><div class="sc-val" id="st-total">7</div><div class="sc-label">Total Users</div><div class="sc-sub">in this tenant</div></div>
+        <div class="stat-card green"><div class="sc-val" id="st-active">5</div><div class="sc-label">Active</div><div class="sc-sub">▲ 1 this week</div></div>
+        <div class="stat-card red"><div class="sc-val" id="st-blocked">1</div><div class="sc-label">Blocked</div><div class="sc-sub">temp restriction</div></div>
+        <div class="stat-card orange"><div class="sc-val">3</div><div class="sc-label">Capture Alerts</div><div class="sc-sub">last 7 days</div></div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <h3>Users</h3><span class="ch-count" id="users-count">7</span>
+          <div class="search-box"><span class="si">🔍</span><input type="text" placeholder="Search name or email…" oninput="filterUsers(this.value)"/></div>
+        </div>
+        <table id="users-table"><thead><tr><th>Name / Email</th><th>User ID</th><th>Status</th><th>Pages With Access</th><th>Joined</th><th>Actions</th></tr></thead>
+        <tbody id="users-tbody"></tbody></table>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════ ACCESS CONTROL ══════════════════════════ -->
+    <div class="section" id="section-access">
+      <div class="page-header">
+        <div class="ph-left"><h1>Access Control</h1><p>Select a user to view or edit their page access policy.</p></div>
+      </div>
+      <div class="ac-page">
+        <!-- LEFT: user picker -->
+        <div class="user-picker">
+          <h3>Select User <span class="info-icon">i<span class="tooltip">Search by name or email to find a user</span></span></h3>
+          <div class="user-search">
+            <span>🔍</span>
+            <input type="text" placeholder="Name or email…" id="user-picker-search" oninput="filterUserPicker(this.value)"/>
+          </div>
+          <div class="user-list" id="user-picker-list"></div>
+        </div>
+        <!-- RIGHT: policy editor -->
+        <div id="access-editor-wrap">
+          <div id="access-empty" class="card" style="padding:40px 24px;">
+            <div class="empty-state"><div class="ei">🔐</div><div class="et">No user selected</div><div class="es">Choose a user from the left to view their access policy</div></div>
+          </div>
+          <div id="access-editor" style="display:none;">
+            <div class="policy-editor" id="policy-editor-inner">
+              <div class="pe-header">
+                <div><div class="pe-user" id="pe-user-name">—</div><div class="pe-uid" id="pe-user-id">—</div></div>
+                <div style="display:flex;gap:8px;align-items:center;">
+                  <button class="reset-btn-top" onclick="resetUserAccess()" id="reset-user-btn">↺ Reset All Access</button>
+                  <button class="btn ghost" id="edit-toggle-btn" onclick="toggleEditMode()">✏️ Edit Access</button>
+                </div>
+              </div>
+              <div id="policy-fields">
+                <!-- 1. NATIONAL -->
+                <div class="ps-block">
+                  <div class="ps-title"><span class="order-num">1</span><h4>National Page</h4><span class="tag-pill national">NATIONAL</span><button class="reset-btn-top" style="margin-left:auto;" onclick="resetPage('national')">↺ Reset</button></div>
+                  <div class="toggle-row">
+                    <div class="tr-left"><div class="tr-name">National Overview</div><div class="tr-desc">All-India aggregated electoral data</div></div>
+                    <label class="toggle"><input type="checkbox" id="tog-national"/><span class="toggle-slider"></span></label>
+                  </div>
+                </div>
+                <!-- 2. STATE -->
+                <div class="ps-block">
+                  <div class="ps-title"><span class="order-num">2</span><h4>State Page</h4><span class="tag-pill state">STATE</span><button class="reset-btn-top" style="margin-left:auto;" onclick="resetPage('state')">↺ Reset</button></div>
+                  <div class="tag-input-wrap" id="state-tag-wrap">
+                    <div class="tag-search-row">
+                      <span class="si">🔍</span>
+                      <input type="text" placeholder="Search and add states…" id="state-search-inp" oninput="updateStateDropdown(this.value)" onfocus="updateStateDropdown(this.value)" />
+                      <div class="tag-dropdown" id="state-dropdown"></div>
+                    </div>
+                    <div class="tags-area" id="state-tags-area"></div>
+                    <div class="tag-actions-row">
+                      <button class="select-all-btn" onclick="selectAllStates()">Select all states &amp; UTs</button>
+                      <span class="tag-count" id="state-tag-count">0 selected</span>
+                    </div>
+                  </div>
+                </div>
+                <!-- 3. ZONE -->
+                <div class="ps-block">
+                  <div class="ps-title"><span class="order-num">3</span><h4>Zone Page</h4><span class="tag-pill zone">ZONE</span><span class="info-icon">i<span class="tooltip">Select state → then add zone names</span></span><button class="reset-btn-top" style="margin-left:auto;" onclick="resetPage('zone')">↺ Reset</button></div>
+                  <button class="tb-btn ghost" style="font-size:12px;padding:7px 12px;" onclick="openSubPopup('zone')">＋ Add Zone Access</button>
+                  <div class="tags-area" id="zone-tags-area" style="padding:10px 0 0;"></div>
+                </div>
+                <!-- 4. DISTRICT -->
+                <div class="ps-block">
+                  <div class="ps-title"><span class="order-num">4</span><h4>District Page</h4><span class="tag-pill district">DISTRICT</span><button class="reset-btn-top" style="margin-left:auto;" onclick="resetPage('district')">↺ Reset</button></div>
+                  <button class="tb-btn ghost" style="font-size:12px;padding:7px 12px;" onclick="openSubPopup('district')">＋ Add District Access</button>
+                  <div class="tags-area" id="district-tags-area" style="padding:10px 0 0;"></div>
+                </div>
+                <!-- 5. PC -->
+                <div class="ps-block">
+                  <div class="ps-title"><span class="order-num">5</span><h4>PC Page</h4><span class="tag-pill pc">PC</span><span class="info-icon">i<span class="tooltip">Parliamentary Constituency — number &amp; name</span></span><button class="reset-btn-top" style="margin-left:auto;" onclick="resetPage('pc')">↺ Reset</button></div>
+                  <button class="tb-btn ghost" style="font-size:12px;padding:7px 12px;" onclick="openSubPopup('pc')">＋ Add PC Access</button>
+                  <div class="tags-area" id="pc-tags-area" style="padding:10px 0 0;"></div>
+                </div>
+                <!-- 6. AC -->
+                <div class="ps-block">
+                  <div class="ps-title"><span class="order-num">6</span><h4>AC Page</h4><span class="tag-pill ac">AC</span><span class="info-icon">i<span class="tooltip">Assembly Constituency — number &amp; name</span></span><button class="reset-btn-top" style="margin-left:auto;" onclick="resetPage('ac')">↺ Reset</button></div>
+                  <button class="tb-btn ghost" style="font-size:12px;padding:7px 12px;" onclick="openSubPopup('ac')">＋ Add AC Access</button>
+                  <div class="tags-area" id="ac-tags-area" style="padding:10px 0 0;"></div>
+                </div>
+                <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:10px;padding-top:18px;border-top:1px solid var(--border);" id="save-row">
+                  <button class="btn ghost" onclick="cancelEdit()">Cancel</button>
+                  <button class="btn primary" onclick="saveAccess()">Save Policy</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════ AUDIT LOGS ══════════════════════════ -->
+    <div class="section" id="section-audit">
+      <div class="page-header"><div class="ph-left"><h1>Audit Logs</h1><p>Activity and security events for all tenant users</p></div></div>
+      <div class="audit-tabs">
+        <div class="audit-tab active" onclick="switchAuditTab('login')">🕐 Login / Logout</div>
+        <div class="audit-tab" onclick="switchAuditTab('pages')">📄 Pages Visited</div>
+        <div class="audit-tab" onclick="switchAuditTab('exports')">📤 Exports</div>
+        <div class="audit-tab" onclick="switchAuditTab('capture')">📸 Capture Alerts</div>
+      </div>
+      <!-- LOGIN TAB -->
+      <div class="audit-content active" id="audit-login">
+        <div class="card">
+          <div class="card-header"><h3>Login &amp; Logout Log</h3><span class="ch-count">12</span></div>
+          <table><thead><tr><th>User</th><th>User ID</th><th>Event</th><th>Timestamp</th><th>IP Address</th><th>Device</th></tr></thead>
+          <tbody id="login-tbody"></tbody></table>
+        </div>
+      </div>
+      <!-- PAGES TAB -->
+      <div class="audit-content" id="audit-pages">
+        <div class="card">
+          <div class="card-header"><h3>Pages Visited</h3><span class="ch-count">18</span></div>
+          <table><thead><tr><th>User</th><th>User ID</th><th>Page</th><th>Visited At</th><th>Duration</th></tr></thead>
+          <tbody id="pages-tbody"></tbody></table>
+        </div>
+      </div>
+      <!-- EXPORTS TAB -->
+      <div class="audit-content" id="audit-exports">
+        <div class="card">
+          <div class="card-header"><h3>Export Events</h3><span class="ch-count">6</span></div>
+          <table><thead><tr><th>User</th><th>User ID</th><th>Export Type</th><th>Format</th><th>Page / Scope</th><th>Timestamp</th></tr></thead>
+          <tbody id="exports-tbody"></tbody></table>
+        </div>
+      </div>
+      <!-- CAPTURE TAB -->
+      <div class="audit-content" id="audit-capture">
+        <div class="alert-banner">⚠️ &nbsp;<strong>3 unreviewed alerts</strong> in the last 7 days</div>
+        <div class="card">
+          <div class="card-header"><h3>Screen Capture Alerts</h3><span class="ch-count">5</span></div>
+          <table><thead><tr><th>User</th><th>User ID</th><th>Attempts</th><th>Last Detected</th><th>Page</th><th>Status</th><th>Actions</th></tr></thead>
+          <tbody id="capture-tbody"></tbody></table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════ OVERVIEW ══════════════════════════ -->
+    <div class="section" id="section-overview">
+      <div class="page-header"><div class="ph-left"><h1>Access Overview</h1><p>See who has access to which pages across the tenant</p></div></div>
+      <div class="ov-grid">
+        <div class="ov-card">
+          <div class="ov-card-hdr"><span class="tag-pill national">NATIONAL</span><span class="oh">National Page</span><span class="oc" id="nat-count"></span></div>
+          <div id="nat-list"></div>
+        </div>
+        <div class="ov-card">
+          <div class="ov-card-hdr"><span class="tag-pill state">STATE</span><span class="oh">State Page (by state)</span><span class="oc" id="state-ov-count"></span></div>
+          <div id="state-ov-list" style="max-height:280px;overflow-y:auto;"></div>
+        </div>
+      </div>
+      <div style="margin-bottom:16px;">
+        <h2 style="font-size:15px;font-weight:700;margin-bottom:12px;">PC &amp; AC Access — Statewise</h2>
+        <div id="pca-ov-wrap"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════ POPUP: state → sub-item (zone/district/pc/ac) ══════ -->
+<div class="popup-bg" id="sub-popup">
+  <div class="popup-panel">
+    <div class="popup-hdr">
+      <div>
+        <div class="ph-title" id="popup-title">Add Access</div>
+        <div class="ph-sub" id="popup-sub">Search a state, then pick items</div>
+      </div>
+      <button class="close-btn" onclick="closePopup()">✕</button>
+    </div>
+    <div class="popup-body">
+      <div class="state-selector" id="popup-state-selector">
+        <div class="ss-left">
+          <div class="ss-search"><input type="text" placeholder="Search state…" id="popup-state-search" oninput="filterPopupStates(this.value)"/></div>
+          <div id="popup-state-list"></div>
+        </div>
+        <div class="ss-right">
+          <div class="ss-right-title" id="popup-right-title">Select a state →</div>
+          <div id="popup-items-list"></div>
+          <div style="margin-top:10px;display:flex;gap:8px;">
+            <button class="select-all-btn" style="font-size:11px;font-weight:600;color:var(--accent);background:none;border:none;cursor:pointer;" onclick="popupSelectAll()">Select all</button>
+          </div>
+        </div>
+      </div>
+      <!-- zone: simple search (no state drill) -->
+      <div id="popup-zone-wrap" style="display:none;flex:1;flex-direction:column;gap:10px;">
+        <div class="popup-search"><span>🔍</span><input type="text" placeholder="Search zone name…" id="popup-zone-search" oninput="filterZoneItems(this.value)"/></div>
+        <div class="popup-results" id="popup-zone-results"></div>
+      </div>
+    </div>
+    <div class="popup-footer">
+      <div class="popup-selected-tags" id="popup-selected-preview"></div>
+      <div style="display:flex;gap:8px;flex-shrink:0;">
+        <button class="btn ghost" onclick="closePopup()">Cancel</button>
+        <button class="btn primary" onclick="applyPopupSelection()">Apply</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODALS -->
+<div class="modal-bg" id="create-modal">
+  <div class="modal">
+    <div class="modal-hdr"><div><h2>Create New User</h2><div class="mh-sub">Login credentials will be sent to the provided email</div></div><button class="close-btn" onclick="closeModal('create-modal')">✕</button></div>
+    <div class="modal-body">
+      <div class="two-col"><div class="form-row"><label>First Name</label><input type="text" id="new-fname" placeholder="Arjun"/></div><div class="form-row"><label>Last Name</label><input type="text" id="new-lname" placeholder="Sharma"/></div></div>
+      <div class="form-row"><label>Email Address <span class="info-icon">i<span class="tooltip">Must be a company email domain</span></span></label><input type="email" id="new-email" placeholder="arjun.sharma@consultancy.in"/></div>
+      <div class="form-row"><label>Temporary Password</label><input type="password" id="new-pass" placeholder="min. 8 characters"/></div>
+    </div>
+    <div class="modal-footer"><button class="btn ghost" onclick="closeModal('create-modal')">Cancel</button><button class="btn primary" onclick="createUser()">Create User</button></div>
+  </div>
+</div>
+
+<div class="modal-bg" id="block-modal">
+  <div class="modal">
+    <div class="modal-hdr"><div><h2>Block User</h2><div class="mh-sub">Temporarily restrict access to PID</div></div><button class="close-btn" onclick="closeModal('block-modal')">✕</button></div>
+    <div class="modal-body">
+      <div class="info-box" style="margin-bottom:14px;"><strong id="bm-name">—</strong><span id="bm-email">—</span></div>
+      <div class="form-row"><label>Block Duration <span class="info-icon">i<span class="tooltip">Access auto-restores after this period</span></span></label>
+        <select id="block-weeks"><option value="1">1 Week</option><option value="2" selected>2 Weeks</option><option value="3">3 Weeks</option><option value="4">4 Weeks</option><option value="6">6 Weeks</option><option value="8">8 Weeks</option><option value="12">12 Weeks (3 months)</option></select>
+        <div class="hint">User will automatically regain access after this period unless manually extended.</div>
+      </div>
+      <div class="form-row"><label>Reason <span style="color:var(--text4);font-weight:400;">(internal note)</span></label><input type="text" id="block-reason" placeholder="e.g. Policy violation…"/></div>
+    </div>
+    <div class="modal-footer"><button class="btn ghost" onclick="closeModal('block-modal')">Cancel</button><button class="btn danger" onclick="confirmBlock()">Block User</button></div>
+  </div>
+</div>
+
+<div class="modal-bg" id="delete-modal">
+  <div class="modal">
+    <div class="modal-hdr"><div><h2>Delete Account</h2><div class="mh-sub">This action is permanent and cannot be undone</div></div><button class="close-btn" onclick="closeModal('delete-modal')">✕</button></div>
+    <div class="modal-body">
+      <div class="info-box danger" style="margin-bottom:14px;"><strong id="dm-name">—</strong><span id="dm-email">—</span></div>
+      <p style="font-size:12px;color:var(--text3);line-height:1.6;margin-bottom:14px;">Permanently deleting this account removes all access, sessions, and audit history from PID. <strong>This cannot be reversed.</strong></p>
+      <div class="form-row"><label>Type <code style="background:var(--surface3);padding:1px 5px;border-radius:4px;">DELETE</code> to confirm</label><input type="text" id="del-confirm" placeholder="DELETE"/></div>
+    </div>
+    <div class="modal-footer"><button class="btn ghost" onclick="closeModal('delete-modal')">Cancel</button><button class="btn danger" onclick="confirmDelete()">Permanently Delete</button></div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ══════════════════════════════════════════
+// DATA
+// ══════════════════════════════════════════
+
+const STATES = [
+  "Andhra Pradesh","Arunachal Pradesh","Assam","Bihar","Chhattisgarh","Goa","Gujarat",
+  "Haryana","Himachal Pradesh","Jharkhand","Karnataka","Kerala","Madhya Pradesh","Maharashtra",
+  "Manipur","Meghalaya","Mizoram","Nagaland","Odisha","Punjab","Rajasthan","Sikkim",
+  "Tamil Nadu","Telangana","Tripura","Uttar Pradesh","Uttarakhand","West Bengal",
+  "Andaman & Nicobar Islands","Chandigarh","Dadra & NH and Daman & Diu","Delhi",
+  "Jammu & Kashmir","Ladakh","Lakshadweep","Puducherry"
+];
+
+// Sample PC data (number: name) — Maharashtra & Tamil Nadu
+const PC_DATA = {
+  "Maharashtra": [
+    {num:1,name:"Nandurbar"},{num:2,name:"Dhule"},{num:3,name:"Jalgaon"},{num:4,name:"Raver"},
+    {num:5,name:"Buldhana"},{num:6,name:"Akola"},{num:7,name:"Amravati"},{num:8,name:"Wardha"},
+    {num:9,name:"Ramtek"},{num:10,name:"Nagpur"},{num:11,name:"Bhandara-Gondia"},
+    {num:12,name:"Gadchiroli-Chimur"},{num:13,name:"Chandrapur"},{num:14,name:"Yavatmal-Washim"},
+    {num:15,name:"Hingoli"},{num:16,name:"Nanded"},{num:17,name:"Osmanabad"},
+    {num:18,name:"Latur"},{num:19,name:"Solapur"},{num:20,name:"Madha"},
+    {num:21,name:"Sangli"},{num:22,name:"Satara"},{num:23,name:"Ratnagiri-Sindhudurg"},
+    {num:24,name:"Kolhapur"},{num:25,name:"Hatkanangle"},{num:26,name:"Baramati"},
+    {num:27,name:"Shirur"},{num:28,name:"Pune"},{num:29,name:"Bhosari"},
+    {num:30,name:"Maval"},{num:31,name:"Aurangabad"},{num:32,name:"Nashik"},
+    {num:33,name:"Dindori"},{num:34,name:"Kalyan"},{num:35,name:"Bhiwandi"},
+    {num:36,name:"Thane"},{num:37,name:"Mumbai North"},{num:38,name:"Mumbai North West"},
+    {num:39,name:"Mumbai North East"},{num:40,name:"Mumbai North Central"},
+    {num:41,name:"Mumbai South Central"},{num:42,name:"Mumbai South"},
+    {num:43,name:"Raigad"},{num:44,name:"Maval"},{num:45,name:"Ahmednagar"},
+    {num:46,name:"Shirdi"},{num:47,name:"Beed"},{num:48,name:"Parbhani"}
+  ],
+  "Tamil Nadu": [
+    {num:1,name:"Thiruvallur"},{num:2,name:"Chennai North"},{num:3,name:"Chennai South"},
+    {num:4,name:"Chennai Central"},{num:5,name:"Sriperumbudur"},{num:6,name:"Kancheepuram"},
+    {num:7,name:"Arakkonam"},{num:8,name:"Vellore"},{num:9,name:"Krishnagiri"},
+    {num:10,name:"Dharmapuri"},{num:11,name:"Tiruvannamalai"},{num:12,name:"Arani"},
+    {num:13,name:"Villupuram"},{num:14,name:"Kallakurichi"},{num:15,name:"Salem"},
+    {num:16,name:"Namakkal"},{num:17,name:"Erode"},{num:18,name:"Tiruppur"},
+    {num:19,name:"Nilgiris"},{num:20,name:"Coimbatore"},{num:21,name:"Pollachi"},
+    {num:22,name:"Dindigul"},{num:23,name:"Karur"},{num:24,name:"Tiruchirappalli"},
+    {num:25,name:"Perambalur"},{num:26,name:"Cuddalore"},{num:27,name:"Chidambaram"},
+    {num:28,name:"Mayiladuthurai"},{num:29,name:"Nagapattinam"},{num:30,name:"Thanjavur"},
+    {num:31,name:"Sivaganga"},{num:32,name:"Madurai"},{num:33,name:"Theni"},
+    {num:34,name:"Virudhunagar"},{num:35,name:"Ramanathapuram"},{num:36,name:"Thoothukudi"},
+    {num:37,name:"Tenkasi"},{num:38,name:"Tirunelveli"},{num:39,name:"Kanniyakumari"}
+  ],
+  "Kerala": [
+    {num:1,name:"Kasaragod"},{num:2,name:"Kannur"},{num:3,name:"Vatakara"},
+    {num:4,name:"Wayanad"},{num:5,name:"Kozhikode"},{num:6,name:"Malappuram"},
+    {num:7,name:"Ponnani"},{num:8,name:"Palakkad"},{num:9,name:"Alathur"},
+    {num:10,name:"Thrissur"},{num:11,name:"Chalakudy"},{num:12,name:"Ernakulam"},
+    {num:13,name:"Idukki"},{num:14,name:"Kottayam"},{num:15,name:"Alappuzha"},
+    {num:16,name:"Mavelikkara"},{num:17,name:"Pathanamthitta"},{num:18,name:"Kollam"},
+    {num:19,name:"Attingal"},{num:20,name:"Thiruvananthapuram"}
+  ]
+};
+
+// Sample AC data — Maharashtra (subset), Tamil Nadu (subset)
+const AC_DATA = {
+  "Maharashtra": [
+    {num:1,name:"Akkalkuwa"},{num:2,name:"Shahada"},{num:3,name:"Nandurbar"},{num:4,name:"Nawapur"},
+    {num:5,name:"Sakri"},{num:6,name:"Dhule Rural"},{num:7,name:"Dhule City"},{num:8,name:"Sindhkheda"},
+    {num:9,name:"Shirpur"},{num:10,name:"Chopda"},{num:11,name:"Raver"},{num:12,name:"Bhusawal"},
+    {num:13,name:"Jalgaon City"},{num:14,name:"Jalgaon Rural"},{num:22,name:"Buldhana"},
+    {num:28,name:"Akot"},{num:30,name:"Akola West"},{num:31,name:"Akola East"},
+    {num:36,name:"Dhamangaon Railway"},{num:37,name:"Badnera"},{num:38,name:"Amravati"},
+    {num:44,name:"Arvi"},{num:45,name:"Deoli"},{num:46,name:"Hinganghat"},
+    {num:156,name:"Andheri East"},{num:157,name:"Andheri West"},{num:158,name:"Borivali"},
+    {num:160,name:"Kandivali East"},{num:164,name:"Goregaon"},{num:167,name:"Jogeshwari East"},
+    {num:168,name:"Dindoshi"},{num:169,name:"Kurla"},{num:170,name:"Kalina"},
+    {num:182,name:"Worli"},{num:183,name:"Shivadi"},{num:184,name:"Byculla"},
+    {num:185,name:"Malabar Hill"},{num:186,name:"Mumbadevi"},{num:187,name:"Colaba"},
+    {num:218,name:"Thane"},{num:219,name:"Kopri-Pachpakhadi"},{num:220,name:"Ovala Majiwada"},
+    {num:221,name:"Airoli"},{num:222,name:"Belapur"},{num:223,name:"Borivali"}
+  ],
+  "Tamil Nadu": [
+    {num:1,name:"Gummidipoondi"},{num:2,name:"Ponneri"},{num:3,name:"Tiruttani"},{num:4,name:"Sholavandan"},
+    {num:5,name:"Ambattur"},{num:6,name:"Maduravoyal"},{num:7,name:"Avadi"},{num:8,name:"Tiruvottiyur"},
+    {num:9,name:"Dr. Radhakrishnan Nagar"},{num:10,name:"Perambur"},{num:11,name:"Kolathur"},
+    {num:12,name:"Villivakkam"},{num:13,name:"Thiru Vi. Ka. Nagar"},{num:14,name:"Egmore"},
+    {num:15,name:"Royapuram"},{num:16,name:"Harbour"},{num:17,name:"Chepauk-Thiruvallikeni"},
+    {num:18,name:"Thousand Lights"},{num:19,name:"Anna Nagar"},{num:20,name:"Virugampakkam"},
+    {num:21,name:"Saidapet"},{num:22,name:"Velachery"},{num:23,name:"Alandur"},
+    {num:101,name:"Dharapuram"},{num:102,name:"Kangayam"},{num:113,name:"Tiruppur North"},
+    {num:114,name:"Tiruppur South"},{num:115,name:"Palladam"},{num:125,name:"Udumalaipettai"},
+    {num:183,name:"Aranthangi"},{num:209,name:"Paramakudi"},{num:210,name:"Tiruvadanai"},
+    {num:211,name:"Ramanathapuram"},{num:212,name:"Mudukulathur"}
+  ],
+  "Kerala": [
+    {num:1,name:"Manjeshwaram"},{num:2,name:"Kasaragod"},{num:3,name:"Udma"},
+    {num:4,name:"Kanhangad"},{num:5,name:"Trikaripur"},{num:6,name:"Payyannur"},
+    {num:7,name:"Kalliasseri"},{num:8,name:"Thalassery"},{num:9,name:"Irikkur"},
+    {num:10,name:"Azhikode"},{num:11,name:"Kannur"},{num:12,name:"Dharmadom"},
+    {num:50,name:"Thiruvananthapuram"},{num:51,name:"Nemom"},{num:52,name:"Attingal"},
+    {num:53,name:"Varkala"},{num:54,name:"Chirayinkeezhu"},{num:55,name:"Kovalam"}
+  ]
+};
+
+// Sample districts
+const DISTRICT_DATA = {
+  "Maharashtra": [
+    {num:1,name:"Nagpur"},{num:2,name:"Pune"},{num:3,name:"Mumbai City"},
+    {num:4,name:"Mumbai Suburban"},{num:5,name:"Thane"},{num:6,name:"Nashik"},
+    {num:7,name:"Aurangabad"},{num:8,name:"Solapur"},{num:9,name:"Kolhapur"},
+    {num:10,name:"Amravati"},{num:11,name:"Latur"},{num:12,name:"Raigad"},
+    {num:13,name:"Satara"},{num:14,name:"Sangli"},{num:15,name:"Nanded"}
+  ],
+  "Tamil Nadu": [
+    {num:1,name:"Chennai"},{num:2,name:"Coimbatore"},{num:3,name:"Madurai"},
+    {num:4,name:"Tiruchirappalli"},{num:5,name:"Salem"},{num:6,name:"Tirunelveli"},
+    {num:7,name:"Erode"},{num:8,name:"Vellore"},{num:9,name:"Thoothukudi"},
+    {num:10,name:"Dindigul"},{num:11,name:"Thanjavur"},{num:12,name:"Kancheepuram"},
+    {num:13,name:"Tiruppur"},{num:14,name:"Tiruvallur"},{num:15,name:"Cuddalore"}
+  ],
+  "Kerala": [
+    {num:1,name:"Thiruvananthapuram"},{num:2,name:"Kollam"},{num:3,name:"Pathanamthitta"},
+    {num:4,name:"Alappuzha"},{num:5,name:"Kottayam"},{num:6,name:"Idukki"},
+    {num:7,name:"Ernakulam"},{num:8,name:"Thrissur"},{num:9,name:"Palakkad"},
+    {num:10,name:"Malappuram"},{num:11,name:"Kozhikode"},{num:12,name:"Wayanad"},
+    {num:13,name:"Kannur"},{num:14,name:"Kasaragod"}
+  ]
+};
+
+const ZONE_DATA = {
+  "Maharashtra": [{name:"Konkan"},{name:"Nashik"},{name:"Pune"},{name:"Aurangabad"},{name:"Amravati"},{name:"Nagpur"}],
+  "Tamil Nadu": [{name:"Chennai"},{name:"North"},{name:"South"},{name:"Central"},{name:"West"},{name:"East"}],
+  "Kerala": [{name:"Northern"},{name:"Central"},{name:"Southern"}],
+  "Uttar Pradesh": [{name:"Central"},{name:"Eastern"},{name:"Western"},{name:"Bundelkhand"},{name:"Purvanchal"}],
+  "Rajasthan": [{name:"Jaipur"},{name:"Jodhpur"},{name:"Bikaner"},{name:"Udaipur"},{name:"Kota"},{name:"Bharatpur"},{name:"Ajmer"}]
+};
+
+// Users
+let users = [
+  {id:"USR001",fname:"Priya",lname:"Menon",email:"priya.menon@consultancy.in",status:"active",joined:"12 Jan 2025",
+    access:{national:true,states:["Kerala","Tamil Nadu"],zones:{Kerala:["Northern","Southern"]},districts:{Kerala:[{num:1,name:"Thiruvananthapuram"}]},pc:{Kerala:[{num:20,name:"Thiruvananthapuram"},{num:19,name:"Attingal"}]},ac:{Kerala:[{num:50,name:"Thiruvananthapuram"},{num:51,name:"Nemom"}]}}},
+  {id:"USR002",fname:"Rahul",lname:"Desai",email:"rahul.desai@consultancy.in",status:"active",joined:"18 Jan 2025",
+    access:{national:true,states:["Maharashtra","Karnataka","Goa"],zones:{Maharashtra:["Pune","Nagpur"]},districts:{Maharashtra:[{num:2,name:"Pune"},{num:5,name:"Thane"}]},pc:{Maharashtra:[{num:28,name:"Pune"},{num:10,name:"Nagpur"},{num:37,name:"Mumbai North"}]},ac:{Maharashtra:[{num:156,name:"Andheri East"},{num:157,name:"Andheri West"},{num:182,name:"Worli"}]}}},
+  {id:"USR003",fname:"Ananya",lname:"Singh",email:"ananya.singh@consultancy.in",status:"blocked",joined:"03 Feb 2025",
+    access:{national:false,states:["Uttar Pradesh","Bihar"],zones:{},districts:{},pc:{},ac:{}}},
+  {id:"USR004",fname:"Karthik",lname:"Iyer",email:"karthik.iyer@consultancy.in",status:"active",joined:"10 Feb 2025",
+    access:{national:true,states:["Tamil Nadu","Karnataka"],zones:{},districts:{TamilNadu:[{num:1,name:"Chennai"},{num:2,name:"Coimbatore"}]},pc:{"Tamil Nadu":[{num:2,name:"Chennai North"},{num:3,name:"Chennai South"},{num:20,name:"Coimbatore"}]},ac:{"Tamil Nadu":[{num:14,name:"Egmore"},{num:17,name:"Chepauk-Thiruvallikeni"}]}}},
+  {id:"USR005",fname:"Sneha",lname:"Patil",email:"sneha.patil@consultancy.in",status:"active",joined:"14 Feb 2025",
+    access:{national:false,states:["Maharashtra"],zones:{Maharashtra:["Konkan"]},districts:{Maharashtra:[{num:3,name:"Mumbai City"},{num:4,name:"Mumbai Suburban"}]},pc:{Maharashtra:[{num:41,name:"Mumbai South Central"},{num:42,name:"Mumbai South"}]},ac:{Maharashtra:[{num:183,name:"Shivadi"},{num:184,name:"Byculla"},{num:186,name:"Mumbadevi"},{num:187,name:"Colaba"}]}}},
+  {id:"USR006",fname:"Vikram",lname:"Bose",email:"vikram.bose@consultancy.in",status:"active",joined:"22 Feb 2025",
+    access:{national:true,states:[],zones:{},districts:{},pc:{},ac:{}}},
+  {id:"USR007",fname:"Meera",lname:"Nair",email:"meera.nair@consultancy.in",status:"pending",joined:"01 Mar 2025",
+    access:{national:false,states:[],zones:{},districts:{},pc:{},ac:{}}},
+];
+
+let auditCapture = [
+  {uid:"USR002",attempts:4,last:"2 hours ago",page:"National",status:"active"},
+  {uid:"USR004",attempts:2,last:"1 day ago",page:"State – TN",status:"active"},
+  {uid:"USR001",attempts:1,last:"3 days ago",page:"AC Page",status:"active"},
+  {uid:"USR003",attempts:7,last:"5 days ago",page:"National",status:"blocked"},
+  {uid:"USR005",attempts:1,last:"6 days ago",page:"State – MH",status:"active"},
+];
+
+let loginLog = [
+  {uid:"USR001",event:"Login",time:"Today 09:14",ip:"103.21.45.12",device:"Chrome / macOS"},
+  {uid:"USR002",event:"Login",time:"Today 08:52",ip:"103.21.45.15",device:"Firefox / Windows"},
+  {uid:"USR003",event:"Logout",time:"Yesterday 18:30",ip:"103.21.46.20",device:"Chrome / Windows"},
+  {uid:"USR004",event:"Login",time:"Yesterday 10:05",ip:"182.74.12.8",device:"Safari / macOS"},
+  {uid:"USR005",event:"Logout",time:"Yesterday 17:45",ip:"103.21.45.18",device:"Chrome / macOS"},
+  {uid:"USR006",event:"Login",time:"2 days ago 09:00",ip:"103.21.45.22",device:"Edge / Windows"},
+  {uid:"USR001",event:"Logout",time:"2 days ago 18:20",ip:"103.21.45.12",device:"Chrome / macOS"},
+];
+
+let pagesLog = [
+  {uid:"USR001",page:"State – Kerala",time:"Today 09:22",duration:"12 min"},
+  {uid:"USR002",page:"National Overview",time:"Today 09:01",duration:"5 min"},
+  {uid:"USR004",page:"AC Page – TN",time:"Yesterday 10:30",duration:"28 min"},
+  {uid:"USR005",page:"PC Page – MH",time:"Yesterday 14:10",duration:"8 min"},
+  {uid:"USR002",page:"District – MH",time:"Yesterday 11:00",duration:"15 min"},
+  {uid:"USR006",page:"National Overview",time:"2 days ago 09:15",duration:"3 min"},
+];
+
+let exportsLog = [
+  {uid:"USR002",type:"Data Export",format:"Excel",scope:"National Overview",time:"Yesterday 11:45"},
+  {uid:"USR004",type:"Report Export",format:"PDF",scope:"AC Page – TN",time:"2 days ago 14:20"},
+  {uid:"USR001",type:"Data Export",format:"CSV",scope:"State – Kerala",time:"3 days ago 10:30"},
+  {uid:"USR005",type:"Report Export",format:"PDF",scope:"PC Page – MH",time:"4 days ago 16:00"},
+];
+
+let targetUid = null;
+let editingUid = null;
+let isEditMode = false;
+let currentPopupType = null;
+let currentPopupState = null;
+let popupSelections = {};
+
+// ══════════════════════════════════════════
+// HELPERS
+// ══════════════════════════════════════════
+function colorFor(name){const h=["#3b82f6","#10b981","#f59e0b","#8b5cf6","#ef4444","#06b6d4","#ec4899"];let s=0;for(let c of name)s+=c.charCodeAt(0);return h[s%h.length];}
+function initials(u){return u.fname[0]+u.lname[0];}
+function fullName(u){return u.fname+' '+u.lname;}
+function userById(id){return users.find(u=>u.id===id);}
+
+function countAccess(u){
+  let pages=[];
+  if(u.access.national) pages.push('<span class="tag-pill national">NAT</span>');
+  if(u.access.states?.length) pages.push(`<span class="tag-pill state">${u.access.states.length} state${u.access.states.length>1?'s':''}</span>`);
+  const zk=Object.keys(u.access.zones||{});
+  if(zk.length) pages.push(`<span class="tag-pill zone">${zk.length} zone st.</span>`);
+  const dk=Object.keys(u.access.districts||{});
+  if(dk.length) pages.push(`<span class="tag-pill district">${dk.length} dist. st.</span>`);
+  const pk=Object.keys(u.access.pc||{});
+  if(pk.length) pages.push(`<span class="tag-pill pc">${pk.length} PC st.</span>`);
+  const ak=Object.keys(u.access.ac||{});
+  if(ak.length) pages.push(`<span class="tag-pill ac">${ak.length} AC st.</span>`);
+  return pages.join(' ') || '<span style="color:var(--text4);font-size:11px;">No access</span>';
+}
+
+// ══════════════════════════════════════════
+// NAV
+// ══════════════════════════════════════════
+const titles={users:"All Users",access:"Access Control",audit:"Audit Logs",overview:"Access Overview"};
+const crumbs={users:"Users",access:"Access Control",audit:"Audit Logs",overview:"Overview"};
+
+function gotoSection(s){
+  document.querySelectorAll('.section').forEach(el=>el.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(el=>el.classList.remove('active'));
+  document.getElementById('section-'+s).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(el=>{if(el.getAttribute('onclick')?.includes("'"+s+"'"))el.classList.add('active');});
+  document.getElementById('tb-title').textContent=titles[s];
+  document.getElementById('tb-crumb').innerHTML=`<span>PID</span> › Tenant Admin › <span>${crumbs[s]}</span>`;
+  if(s==='overview') renderOverview();
+  if(s==='users') renderUsers();
+}
+
+// ══════════════════════════════════════════
+// USERS TABLE
+// ══════════════════════════════════════════
+function renderUsers(filter=''){
+  const tbody=document.getElementById('users-tbody');
+  const list=users.filter(u=>{
+    const q=filter.toLowerCase();
+    return !q||(fullName(u).toLowerCase().includes(q)||u.email.toLowerCase().includes(q)||u.id.toLowerCase().includes(q));
+  });
+  document.getElementById('users-count').textContent=list.length;
+  document.getElementById('st-total').textContent=users.length;
+  document.getElementById('st-active').textContent=users.filter(u=>u.status==='active').length;
+  document.getElementById('st-blocked').textContent=users.filter(u=>u.status==='blocked').length;
+
+  tbody.innerHTML=list.map(u=>{
+    const col=colorFor(u.fname);
+    const tip=buildHoverTip(u);
+    const blockBtn=u.status==='blocked'
+      ? `<button class="act-btn success" onclick="event.stopPropagation();unblockUser('${u.id}')">Unblock</button>`
+      : `<button class="act-btn warn" onclick="event.stopPropagation();openBlock('${u.id}')">Block</button>`;
+    return `<tr>
+      <td>
+        <div class="hover-wrap" style="display:flex;align-items:center;gap:10px;">
+          <div class="avatar" style="background:${col}18;color:${col};border:1px solid ${col}30;">${initials(u)}</div>
+          <div><div style="font-size:13px;font-weight:600;color:var(--text);">${fullName(u)}</div><span class="uid-text">${u.email}</span></div>
+          ${tip}
+        </div>
+      </td>
+      <td><span class="uid-text" style="display:inline;">${u.id}</span></td>
+      <td><span class="badge ${u.status}"><span class="dot"></span>${u.status}</span></td>
+      <td>${countAccess(u)}</td>
+      <td><span style="font-size:12px;color:var(--text3);">${u.joined}</span></td>
+      <td>
+        <div class="action-row">
+          <button class="act-btn primary" onclick="viewAccess('${u.id}')">View Access</button>
+          ${blockBtn}
+          <button class="act-btn danger" onclick="openDelete('${u.id}')">Delete</button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('')||`<tr><td colspan="6"><div class="empty-state"><div class="ei">🔎</div><div class="et">No results</div></div></td></tr>`;
+}
+
+function buildHoverTip(u){
+  const nat=`<div class="ht-row"><span class="ht-key">National</span><span class="${u.access.national?'ht-yes':'ht-no'}">${u.access.national?'✓ Yes':'— No'}</span></div>`;
+  const stLine=u.access.states?.length
+    ? `<div class="ht-section"><div class="ht-row"><span class="ht-key">States</span></div><div class="ht-tags">${u.access.states.map(s=>`<span class="ht-tag">${s}</span>`).join('')}</div></div>`
+    : `<div class="ht-row"><span class="ht-key">States</span><span class="ht-no">None</span></div>`;
+  const pcKeys=Object.keys(u.access.pc||{});
+  const pcLine=pcKeys.length
+    ? `<div class="ht-section"><div class="ht-row"><span class="ht-key">PCs</span></div>${pcKeys.map(st=>`<div style="margin-top:3px;"><span style="font-size:10px;color:var(--text3);">${st}:</span><div class="ht-tags">${(u.access.pc[st]||[]).map(p=>`<span class="ht-tag">${p.num} – ${p.name}</span>`).join('')}</div></div>`).join('')}</div>`
+    : `<div class="ht-row"><span class="ht-key">PCs</span><span class="ht-no">None</span></div>`;
+  const acKeys=Object.keys(u.access.ac||{});
+  const acLine=acKeys.length
+    ? `<div class="ht-section"><div class="ht-row"><span class="ht-key">ACs</span></div>${acKeys.map(st=>`<div style="margin-top:3px;"><span style="font-size:10px;color:var(--text3);">${st}:</span><div class="ht-tags">${(u.access.ac[st]||[]).map(a=>`<span class="ht-tag">${a.num} – ${a.name}</span>`).join('')}</div></div>`).join('')}</div>`
+    : `<div class="ht-row"><span class="ht-key">ACs</span><span class="ht-no">None</span></div>`;
+  return `<div class="hover-tip"><div class="ht-title">Access Policy — ${fullName(u)}</div>${nat}${stLine}${pcLine}${acLine}</div>`;
+}
+
+function filterUsers(v){renderUsers(v);}
+
+function viewAccess(uid){
+  gotoSection('access');
+  setTimeout(()=>selectUserInPicker(uid),60);
+}
+
+// ══════════════════════════════════════════
+// USER PICKER (ACCESS CONTROL)
+// ══════════════════════════════════════════
+function renderUserPicker(filter=''){
+  const list=document.getElementById('user-picker-list');
+  const filtered=users.filter(u=>{
+    const q=filter.toLowerCase();
+    return !q||(fullName(u).toLowerCase().includes(q)||u.email.toLowerCase().includes(q)||u.id.toLowerCase().includes(q));
+  });
+  list.innerHTML=filtered.map(u=>`
+    <div class="user-list-item ${editingUid===u.id?'selected':''}" onclick="selectUserInPicker('${u.id}')">
+      <div class="avatar" style="width:28px;height:28px;font-size:10px;background:${colorFor(u.fname)}18;color:${colorFor(u.fname)};border:1px solid ${colorFor(u.fname)}30;">${initials(u)}</div>
+      <div><div class="uname">${fullName(u)}</div><div class="uemail">${u.email}</div></div>
+    </div>`).join('')||'<div style="padding:12px;font-size:12px;color:var(--text4);">No users found</div>';
+}
+
+function filterUserPicker(v){renderUserPicker(v);}
+
+function selectUserInPicker(uid){
+  editingUid=uid;
+  isEditMode=false;
+  renderUserPicker(document.getElementById('user-picker-search').value);
+  loadPolicy();
+}
+
+// ══════════════════════════════════════════
+// POLICY EDITOR
+// ══════════════════════════════════════════
+
+// temp policy state (while editing)
+let tempPolicy={national:false,states:[],zones:{},districts:{},pc:{},ac:{}};
+
+function loadPolicy(){
+  const u=userById(editingUid);
+  if(!u) return;
+  document.getElementById('access-empty').style.display='none';
+  document.getElementById('access-editor').style.display='block';
+  document.getElementById('pe-user-name').textContent=fullName(u);
+  document.getElementById('pe-user-id').textContent=u.id+' · '+u.email;
+  // clone access into tempPolicy
+  tempPolicy=JSON.parse(JSON.stringify(u.access));
+  renderPolicy();
+  setFrozen(true);
+  document.getElementById('edit-toggle-btn').textContent='✏️ Edit Access';
+  document.getElementById('save-row').style.display='none';
+}
+
+function renderPolicy(){
+  const p=tempPolicy;
+  document.getElementById('tog-national').checked=!!p.national;
+  renderStateTags();
+  renderSubTags('zone','zone-tags-area');
+  renderSubTags('district','district-tags-area');
+  renderSubTags('pc','pc-tags-area');
+  renderSubTags('ac','ac-tags-area');
+}
+
+function setFrozen(frozen){
+  const inner=document.getElementById('policy-fields');
+  if(frozen) inner.classList.add('pe-frozen');
+  else inner.classList.remove('pe-frozen');
+}
+
+function toggleEditMode(){
+  isEditMode=!isEditMode;
+  setFrozen(!isEditMode);
+  document.getElementById('edit-toggle-btn').textContent=isEditMode?'🔒 View Only':'✏️ Edit Access';
+  document.getElementById('save-row').style.display=isEditMode?'flex':'none';
+}
+
+function cancelEdit(){
+  const u=userById(editingUid);
+  tempPolicy=JSON.parse(JSON.stringify(u.access));
+  renderPolicy();
+  isEditMode=false;
+  setFrozen(true);
+  document.getElementById('edit-toggle-btn').textContent='✏️ Edit Access';
+  document.getElementById('save-row').style.display='none';
+}
+
+function saveAccess(){
+  const u=userById(editingUid);
+  u.access=JSON.parse(JSON.stringify(tempPolicy));
+  u.access.national=document.getElementById('tog-national').checked;
+  isEditMode=false;
+  setFrozen(true);
+  document.getElementById('edit-toggle-btn').textContent='✏️ Edit Access';
+  document.getElementById('save-row').style.display='none';
+  renderUsers();
+  toast('✓ Access policy saved for '+fullName(u));
+}
+
+function resetPage(page){
+  if(!isEditMode){toast('Click Edit Access first','warn');return;}
+  if(page==='national'){tempPolicy.national=false;document.getElementById('tog-national').checked=false;}
+  else if(page==='state'){tempPolicy.states=[];renderStateTags();}
+  else if(page==='zone'){tempPolicy.zones={};renderSubTags('zone','zone-tags-area');}
+  else if(page==='district'){tempPolicy.districts={};renderSubTags('district','district-tags-area');}
+  else if(page==='pc'){tempPolicy.pc={};renderSubTags('pc','pc-tags-area');}
+  else if(page==='ac'){tempPolicy.ac={};renderSubTags('ac','ac-tags-area');}
+  toast('↺ '+page+' access cleared');
+}
+
+function resetUserAccess(){
+  if(!isEditMode){toast('Click Edit Access first','warn');return;}
+  tempPolicy={national:false,states:[],zones:{},districts:{},pc:{},ac:{}};
+  renderPolicy();
+  toast('↺ All access reset for this user');
+}
+
+// STATE TAGS
+function renderStateTags(){
+  const area=document.getElementById('state-tags-area');
+  area.innerHTML=(tempPolicy.states||[]).map(s=>`<span class="tag-item state-tag">${s}<button class="xt" onclick="removeState('${s}')">×</button></span>`).join('');
+  document.getElementById('state-tag-count').textContent=(tempPolicy.states||[]).length+' selected';
+}
+
+function updateStateDropdown(val){
+  const dd=document.getElementById('state-dropdown');
+  const filtered=STATES.filter(s=>s.toLowerCase().includes(val.toLowerCase())&&!(tempPolicy.states||[]).includes(s));
+  if(!val&&filtered.length===0){dd.classList.remove('open');return;}
+  dd.innerHTML=filtered.length
+    ? filtered.map(s=>`<div class="tag-dropdown-item" onclick="addState('${s}')">${s}</div>`).join('')
+    : '<div class="tag-dropdown-item selected">No more states to add</div>';
+  dd.classList.add('open');
+}
+
+document.addEventListener('click',e=>{
+  if(!e.target.closest('#state-tag-wrap')) document.getElementById('state-dropdown')?.classList.remove('open');
+});
+
+function addState(s){
+  if(!isEditMode) return;
+  if(!(tempPolicy.states||[]).includes(s)){
+    if(!tempPolicy.states) tempPolicy.states=[];
+    tempPolicy.states.push(s);
+    renderStateTags();
+    document.getElementById('state-search-inp').value='';
+    document.getElementById('state-dropdown').classList.remove('open');
+  }
+}
+
+function removeState(s){
+  if(!isEditMode) return;
+  tempPolicy.states=(tempPolicy.states||[]).filter(x=>x!==s);
+  renderStateTags();
+}
+
+function selectAllStates(){
+  if(!isEditMode){toast('Click Edit Access first','warn');return;}
+  tempPolicy.states=[...STATES];
+  renderStateTags();
+  toast('✓ All states & UTs selected');
+}
+
+// SUB-TAGS (zone/district/pc/ac)
+function renderSubTags(type,areaId){
+  const area=document.getElementById(areaId);
+  const dataKey={zone:'zones',district:'districts',pc:'pc',ac:'ac'}[type];
+  const data=tempPolicy[dataKey]||{};
+  let html='';
+  for(const [st,items] of Object.entries(data)){
+    (items||[]).forEach(item=>{
+      const label=typeof item==='string'?item:`${item.num} – ${item.name}`;
+      const removeArg=typeof item==='string'?`'${item}'`:`${item.num}`;
+      html+=`<span class="tag-item ${type}-tag">${st}: ${label}<button class="xt" onclick="removeSubItem('${type}','${st}',${removeArg})">×</button></span>`;
+    });
+  }
+  area.innerHTML=html||'<span style="font-size:11px;color:var(--text4);">No access configured</span>';
+}
+
+function removeSubItem(type,state,numOrName){
+  if(!isEditMode) return;
+  const key={zone:'zones',district:'districts',pc:'pc',ac:'ac'}[type];
+  if(!tempPolicy[key]||!tempPolicy[key][state]) return;
+  if(type==='zone'){
+    tempPolicy[key][state]=tempPolicy[key][state].filter(x=>x!==numOrName);
+  } else {
+    tempPolicy[key][state]=tempPolicy[key][state].filter(x=>x.num!==numOrName);
+  }
+  if(!tempPolicy[key][state].length) delete tempPolicy[key][state];
+  renderSubTags(type,type+'-tags-area');
+}
+
+// ══════════════════════════════════════════
+// POPUP (zone/district/pc/ac)
+// ══════════════════════════════════════════
+function openSubPopup(type){
+  if(!isEditMode){toast('Click Edit Access first','warn');return;}
+  currentPopupType=type;
+  currentPopupState=null;
+  popupSelections={};
+  // clone existing
+  const key={zone:'zones',district:'districts',pc:'pc',ac:'ac'}[type];
+  const existing=tempPolicy[key]||{};
+  Object.entries(existing).forEach(([st,items])=>{
+    popupSelections[st]=type==='zone'?[...items]:items.map(i=>({...i}));
+  });
+
+  const titles={zone:'Zone Page Access',district:'District Page Access',pc:'PC Page Access',ac:'AC Page Access'};
+  const subs={zone:'Search and select zones statewise',district:'Select state → choose districts',pc:'Select state → choose Parliamentary Constituencies',ac:'Select state → choose Assembly Constituencies'};
+  document.getElementById('popup-title').textContent=titles[type];
+  document.getElementById('popup-sub').textContent=subs[type];
+
+  if(type==='zone'){
+    document.getElementById('popup-state-selector').style.display='none';
+    document.getElementById('popup-zone-wrap').style.display='flex';
+    renderZoneItems('');
+  } else {
+    document.getElementById('popup-state-selector').style.display='grid';
+    document.getElementById('popup-zone-wrap').style.display='none';
+    renderPopupStates('');
+    renderPopupItems();
+  }
+  renderPopupPreview();
+  document.getElementById('sub-popup').classList.add('open');
+}
+
+function closePopup(){document.getElementById('sub-popup').classList.remove('open');}
+
+function filterPopupStates(v){renderPopupStates(v);}
+
+function renderPopupStates(filter=''){
+  const el=document.getElementById('popup-state-list');
+  const hasDat=st=>{
+    const dt={district:DISTRICT_DATA,pc:PC_DATA,ac:AC_DATA}[currentPopupType]||{};
+    return !!dt[st];
+  };
+  const list=STATES.filter(s=>s.toLowerCase().includes(filter.toLowerCase())&&hasDat(s));
+  el.innerHTML=list.map(s=>{
+    const sel=currentPopupState===s;
+    const cnt=(popupSelections[s]||[]).length;
+    return `<div class="ss-state-item ${sel?'selected':''}" onclick="selectPopupState('${s}')">
+      <span>${s}</span>${cnt?`<span class="badge active" style="font-size:9px;padding:1px 6px;">${cnt}</span>`:''}
+    </div>`;
+  }).join('')||'<div style="padding:12px;font-size:12px;color:var(--text4);">No data available</div>';
+}
+
+function selectPopupState(st){
+  currentPopupState=st;
+  renderPopupStates(document.getElementById('popup-state-search').value);
+  renderPopupItems();
+}
+
+function renderPopupItems(filter=''){
+  const el=document.getElementById('popup-items-list');
+  const titleEl=document.getElementById('popup-right-title');
+  if(!currentPopupState){el.innerHTML='<div style="color:var(--text4);font-size:12px;padding:8px;">← Select a state</div>';titleEl.textContent='Select a state →';return;}
+  const dt={district:DISTRICT_DATA,pc:PC_DATA,ac:AC_DATA}[currentPopupType]||{};
+  const items=(dt[currentPopupState]||[]).filter(i=>!filter||i.name.toLowerCase().includes(filter.toLowerCase())||String(i.num).includes(filter));
+  const sel=popupSelections[currentPopupState]||[];
+  titleEl.textContent=currentPopupState;
+  el.innerHTML=items.map(item=>{
+    const isSel=sel.some(s=>s.num===item.num);
+    return `<div class="ss-item-row ${isSel?'selected-item':''}" onclick="togglePopupItem(${item.num},'${item.name}')">
+      <span><span class="ss-item-row .ir-name" style="font-size:12px;font-weight:${isSel?700:500};color:${isSel?'var(--accent)':'var(--text)'};">${item.name}</span></span>
+      <span class="ir-num">${item.num}${isSel?' ✓':''}</span>
+    </div>`;
+  }).join('')||'<div class="popup-no-results">No items found</div>';
+}
+
+function togglePopupItem(num,name){
+  if(!currentPopupState) return;
+  if(!popupSelections[currentPopupState]) popupSelections[currentPopupState]=[];
+  const idx=popupSelections[currentPopupState].findIndex(x=>x.num===num);
+  if(idx>=0) popupSelections[currentPopupState].splice(idx,1);
+  else popupSelections[currentPopupState].push({num,name});
+  renderPopupItems();
+  renderPopupStates(document.getElementById('popup-state-search').value);
+  renderPopupPreview();
+}
+
+function popupSelectAll(){
+  if(!currentPopupState) return;
+  const dt={district:DISTRICT_DATA,pc:PC_DATA,ac:AC_DATA}[currentPopupType]||{};
+  popupSelections[currentPopupState]=(dt[currentPopupState]||[]).map(i=>({...i}));
+  renderPopupItems();
+  renderPopupStates(document.getElementById('popup-state-search').value);
+  renderPopupPreview();
+}
+
+function renderPopupPreview(){
+  const el=document.getElementById('popup-selected-preview');
+  const tags=[];
+  Object.entries(popupSelections).forEach(([st,items])=>{
+    (items||[]).forEach(item=>{
+      const label=typeof item==='string'?item:`${item.num} – ${item.name}`;
+      tags.push(`<span class="tag-item ${currentPopupType}-tag" style="font-size:10px;">${st}: ${label}</span>`);
+    });
+  });
+  el.innerHTML=tags.join('')||'<span style="font-size:11px;color:var(--text4);">Nothing selected yet</span>';
+}
+
+function applyPopupSelection(){
+  const key={zone:'zones',district:'districts',pc:'pc',ac:'ac'}[currentPopupType];
+  if(currentPopupType==='zone'){
+    Object.entries(popupSelections).forEach(([st,items])=>{
+      if(!tempPolicy[key]) tempPolicy[key]={};
+      if(items.length) tempPolicy[key][st]=items;
+      else delete tempPolicy[key][st];
+    });
+  } else {
+    Object.entries(popupSelections).forEach(([st,items])=>{
+      if(!tempPolicy[key]) tempPolicy[key]={};
+      if(items.length) tempPolicy[key][st]=items;
+      else delete tempPolicy[key][st];
+    });
+  }
+  renderSubTags(currentPopupType,currentPopupType+'-tags-area');
+  closePopup();
+  toast('✓ '+currentPopupType.toUpperCase()+' access updated');
+}
+
+// ZONE (simple search, statewise)
+function renderZoneItems(filter=''){
+  const el=document.getElementById('popup-zone-results');
+  const allZones=[];
+  Object.entries(ZONE_DATA).forEach(([st,zones])=>{
+    zones.filter(z=>z.name.toLowerCase().includes(filter.toLowerCase())).forEach(z=>{
+      allZones.push({state:st,name:z.name});
+    });
+  });
+  const sel=popupSelections;
+  el.innerHTML=allZones.map(z=>{
+    const isSel=(sel[z.state]||[]).includes(z.name);
+    return `<div class="popup-result-item ${isSel?'selected':''}" onclick="toggleZoneItem('${z.state}','${z.name}')">
+      <div><span class="pri-name">${z.name}</span><span style="font-size:10px;color:var(--text4);margin-left:8px;">${z.state}</span></div>
+      ${isSel?'<span class="pri-check">✓</span>':''}
+    </div>`;
+  }).join('')||'<div class="popup-no-results">No zones found</div>';
+}
+
+function filterZoneItems(v){renderZoneItems(v);}
+
+function toggleZoneItem(state,name){
+  if(!popupSelections[state]) popupSelections[state]=[];
+  const idx=popupSelections[state].indexOf(name);
+  if(idx>=0) popupSelections[state].splice(idx,1);
+  else popupSelections[state].push(name);
+  renderZoneItems(document.getElementById('popup-zone-search').value);
+  renderPopupPreview();
+}
+
+// ══════════════════════════════════════════
+// MODALS
+// ══════════════════════════════════════════
+function openModal(id){document.getElementById(id).classList.add('open');}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+document.querySelectorAll('.modal-bg').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('open');}));
+
+function createUser(){
+  const fn=document.getElementById('new-fname').value.trim();
+  const ln=document.getElementById('new-lname').value.trim();
+  const em=document.getElementById('new-email').value.trim();
+  if(!fn||!ln||!em){toast('Fill in all required fields','warn');return;}
+  const id='USR'+(100+users.length+1);
+  users.push({id,fname:fn,lname:ln,email:em,status:'active',joined:new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}),access:{national:false,states:[],zones:{},districts:{},pc:{},ac:{}}});
+  ['new-fname','new-lname','new-email','new-pass'].forEach(i=>document.getElementById(i).value='');
+  closeModal('create-modal');
+  renderUsers();
+  renderUserPicker();
+  toast('✓ User '+fn+' '+ln+' created ('+id+')');
+}
+
+function openBlock(uid){
+  targetUid=uid;
+  const u=userById(uid);
+  document.getElementById('bm-name').textContent=fullName(u);
+  document.getElementById('bm-email').textContent=u.email;
+  openModal('block-modal');
+}
+function confirmBlock(){
+  const u=userById(targetUid);
+  if(!u) return;
+  u.status='blocked';
+  closeModal('block-modal');
+  renderUsers();
+  renderUserPicker();
+  toast('🔒 '+fullName(u)+' blocked for '+document.getElementById('block-weeks').value+' week(s)','danger');
+}
+function unblockUser(uid){
+  const u=userById(uid);
+  if(!u) return;
+  u.status='active';
+  renderUsers();
+  toast('✓ '+fullName(u)+' unblocked');
+}
+
+function openDelete(uid){
+  targetUid=uid;
+  const u=userById(uid);
+  document.getElementById('dm-name').textContent=fullName(u);
+  document.getElementById('dm-email').textContent=u.email;
+  document.getElementById('del-confirm').value='';
+  openModal('delete-modal');
+}
+function confirmDelete(){
+  if(document.getElementById('del-confirm').value!=='DELETE'){toast('Type DELETE to confirm','warn');return;}
+  const u=userById(targetUid);
+  users=users.filter(x=>x.id!==targetUid);
+  closeModal('delete-modal');
+  renderUsers();
+  renderUserPicker();
+  if(editingUid===targetUid){editingUid=null;document.getElementById('access-empty').style.display='';document.getElementById('access-editor').style.display='none';}
+  toast('🗑 '+fullName(u)+' permanently deleted','danger');
+}
+
+// ══════════════════════════════════════════
+// AUDIT LOGS
+// ══════════════════════════════════════════
+function switchAuditTab(tab){
+  document.querySelectorAll('.audit-tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.audit-content').forEach(t=>t.classList.remove('active'));
+  event.target.classList.add('active');
+  document.getElementById('audit-'+tab).classList.add('active');
+}
+
+function renderAuditTables(){
+  // login
+  document.getElementById('login-tbody').innerHTML=loginLog.map(l=>{
+    const u=userById(l.uid)||{fname:'?',lname:'',email:'—',id:l.uid};
+    const col=colorFor(u.fname);
+    const evBadge=l.event==='Login'?`<span class="badge active"><span class="dot"></span>Login</span>`:`<span class="badge" style="background:var(--surface3);color:var(--text3);"><span class="dot"></span>Logout</span>`;
+    return `<tr><td><div style="display:flex;align-items:center;gap:9px;"><div class="avatar" style="width:28px;height:28px;font-size:10px;background:${col}18;color:${col};border:1px solid ${col}30;">${initials(u)}</div><div><div style="font-size:13px;font-weight:600;">${fullName(u)}</div><span class="uid-text">${u.email}</span></div></div></td><td><span class="uid-text" style="display:inline;">${u.id}</span></td><td>${evBadge}</td><td><span style="font-size:12px;">${l.time}</span></td><td><span class="uid-text" style="display:inline;">${l.ip}</span></td><td><span style="font-size:12px;color:var(--text3);">${l.device}</span></td></tr>`;
+  }).join('');
+  // pages
+  document.getElementById('pages-tbody').innerHTML=pagesLog.map(l=>{
+    const u=userById(l.uid)||{fname:'?',lname:'',email:'—',id:l.uid};
+    const col=colorFor(u.fname);
+    const pgType=l.page.startsWith('National')?'national':l.page.startsWith('AC')?'ac':l.page.startsWith('PC')?'pc':l.page.startsWith('District')?'district':l.page.startsWith('State')?'state':'zone';
+    return `<tr><td><div style="display:flex;align-items:center;gap:9px;"><div class="avatar" style="width:28px;height:28px;font-size:10px;background:${col}18;color:${col};border:1px solid ${col}30;">${initials(u)}</div><div><div style="font-size:13px;font-weight:600;">${fullName(u)}</div><span class="uid-text">${u.email}</span></div></div></td><td><span class="uid-text" style="display:inline;">${u.id}</span></td><td><span class="tag-pill ${pgType}">${l.page}</span></td><td><span style="font-size:12px;">${l.time}</span></td><td><span style="font-size:12px;color:var(--text3);">${l.duration}</span></td></tr>`;
+  }).join('');
+  // exports
+  document.getElementById('exports-tbody').innerHTML=exportsLog.map(l=>{
+    const u=userById(l.uid)||{fname:'?',lname:'',email:'—',id:l.uid};
+    const col=colorFor(u.fname);
+    const fmtColor={PDF:'#dc2626',Excel:'#16a34a',CSV:'#2563eb'}[l.format]||'#374151';
+    return `<tr><td><div style="display:flex;align-items:center;gap:9px;"><div class="avatar" style="width:28px;height:28px;font-size:10px;background:${col}18;color:${col};border:1px solid ${col}30;">${initials(u)}</div><div><div style="font-size:13px;font-weight:600;">${fullName(u)}</div><span class="uid-text">${u.email}</span></div></div></td><td><span class="uid-text" style="display:inline;">${u.id}</span></td><td><span style="font-size:12px;">${l.type}</span></td><td><span style="font-family:var(--mono);font-size:10px;font-weight:600;color:${fmtColor};">${l.format}</span></td><td><span style="font-size:12px;color:var(--text3);">${l.scope}</span></td><td><span style="font-size:12px;">${l.time}</span></td></tr>`;
+  }).join('');
+  // capture
+  document.getElementById('capture-tbody').innerHTML=auditCapture.map((a,i)=>{
+    const u=userById(a.uid)||{fname:'?',lname:'',email:'—',id:a.uid};
+    const col=colorFor(u.fname);
+    const blockBtn=a.status==='blocked'
+      ? `<button class="act-btn success" onclick="captureUnblock(${i})">Unblock</button>`
+      : `<button class="act-btn warn" onclick="captureBlock(${i})">Block</button>`;
+    return `<tr><td><div style="display:flex;align-items:center;gap:9px;"><div class="avatar" style="width:28px;height:28px;font-size:10px;background:${col}18;color:${col};border:1px solid ${col}30;">${initials(u)}</div><div><div style="font-size:13px;font-weight:600;">${fullName(u)}</div><span class="uid-text">${u.email}</span></div></div></td><td><span class="uid-text" style="display:inline;">${a.uid}</span></td><td><span style="font-weight:700;color:${a.attempts>=4?'var(--red)':'var(--text)'};">${a.attempts}</span></td><td><span style="font-size:12px;">${a.last}</span></td><td><span class="tag-pill ${a.page.startsWith('National')?'national':a.page.startsWith('AC')?'ac':'state'}">${a.page}</span></td><td><span class="badge ${a.status}"><span class="dot"></span>${a.status}</span></td><td><div class="action-row">${blockBtn}<button class="act-btn danger" onclick="captureDelete(${i})">Delete</button></div></td></tr>`;
+  }).join('');
+}
+
+function captureBlock(i){const u=userById(auditCapture[i].uid);if(u)u.status='blocked';auditCapture[i].status='blocked';renderAuditTables();renderUsers();toast('🔒 User blocked from capture log','danger');}
+function captureUnblock(i){const u=userById(auditCapture[i].uid);if(u)u.status='active';auditCapture[i].status='active';renderAuditTables();renderUsers();toast('✓ User unblocked');}
+function captureDelete(i){const uid=auditCapture[i].uid;const u=userById(uid);users=users.filter(x=>x.id!==uid);auditCapture.splice(i,1);renderAuditTables();renderUsers();toast('🗑 User deleted','danger');}
+
+// ══════════════════════════════════════════
+// OVERVIEW
+// ══════════════════════════════════════════
+function ovUserRow(u){
+  const col=colorFor(u.fname);
+  return `<div class="ov-user-row">
+    <div class="avatar" style="background:${col}18;color:${col};border:1px solid ${col}30;">${initials(u)}</div>
+    <div style="flex:1;"><div class="ov-name">${fullName(u)}</div><div class="ov-uid">${u.id}</div></div>
+    <div class="ov-uid">${u.email}</div>
+  </div>`;
+}
+
+function renderOverview(){
+  const natU=users.filter(u=>u.access.national);
+  document.getElementById('nat-count').textContent=natU.length+' users';
+  document.getElementById('nat-list').innerHTML=natU.length?natU.map(ovUserRow).join(''):'<div class="empty-state" style="padding:20px;"><div class="es">No national access configured</div></div>';
+
+  // state overview — grouped by state
+  const stateMap={};
+  users.forEach(u=>(u.access.states||[]).forEach(s=>{if(!stateMap[s])stateMap[s]=[];stateMap[s].push(u);}));
+  document.getElementById('state-ov-count').textContent=Object.keys(stateMap).length+' states';
+  document.getElementById('state-ov-list').innerHTML=Object.entries(stateMap).map(([st,uls])=>`
+    <div style="border-bottom:1px solid var(--border);">
+      <div style="padding:7px 14px;background:var(--surface2);font-size:11px;font-weight:600;color:var(--text3);">${st} <span style="color:var(--text4);">(${uls.length})</span></div>
+      ${uls.map(ovUserRow).join('')}
+    </div>`).join('')||'<div class="empty-state" style="padding:20px;"><div class="es">No state access</div></div>';
+
+  // PC & AC statewise
+  const pcMap={}, acMap={};
+  users.forEach(u=>{
+    Object.entries(u.access.pc||{}).forEach(([st,pcs])=>{if(!pcMap[st])pcMap[st]=[];pcMap[st].push({user:u,items:pcs});});
+    Object.entries(u.access.ac||{}).forEach(([st,acs])=>{if(!acMap[st])acMap[st]=[];acMap[st].push({user:u,items:acs});});
+  });
+  const allStates=[...new Set([...Object.keys(pcMap),...Object.keys(acMap)])];
+  document.getElementById('pca-ov-wrap').innerHTML=allStates.map(st=>`
+    <div class="ov-state-block">
+      <div class="ov-state-hdr"><span class="sn">${st}</span><span class="ov-state-count">${(pcMap[st]||[]).length} PC users · ${(acMap[st]||[]).length} AC users</span></div>
+      <div class="ov-state-body">
+        ${(pcMap[st]||[]).map(e=>`<div class="ov-state-row"><div class="avatar" style="width:24px;height:24px;font-size:9px;background:${colorFor(e.user.fname)}18;color:${colorFor(e.user.fname)};border:1px solid ${colorFor(e.user.fname)}30;">${initials(e.user)}</div><div style="flex:1;"><div class="ov-name">${fullName(e.user)}</div><div class="ov-uid">${e.user.id}</div></div><div style="display:flex;flex-wrap:wrap;gap:4px;justify-content:flex-end;">${(e.items||[]).map(p=>`<span class="tag-pill pc" style="font-size:9px;">${p.num}–${p.name}</span>`).join('')}</div></div>`).join('')}
+        ${(acMap[st]||[]).map(e=>`<div class="ov-state-row" style="background:var(--surface2);"><div class="avatar" style="width:24px;height:24px;font-size:9px;background:${colorFor(e.user.fname)}18;color:${colorFor(e.user.fname)};border:1px solid ${colorFor(e.user.fname)}30;">${initials(e.user)}</div><div style="flex:1;"><div class="ov-name">${fullName(e.user)}</div><div class="ov-uid">${e.user.id}</div></div><div style="display:flex;flex-wrap:wrap;gap:4px;justify-content:flex-end;">${(e.items||[]).map(a=>`<span class="tag-pill ac" style="font-size:9px;">${a.num}–${a.name}</span>`).join('')}</div></div>`).join('')}
+      </div>
+    </div>`).join('')||'<div class="empty-state"><div class="ei">🗺️</div><div class="et">No PC/AC access configured</div></div>';
+}
+
+// ══════════════════════════════════════════
+// TOAST
+// ══════════════════════════════════════════
+let toastT;
+function toast(msg,type='success'){
+  const el=document.getElementById('toast');
+  const colors={success:'#027a48',danger:'#d92d20',warn:'#b54708'};
+  el.textContent=msg;
+  el.style.background=type==='success'?'#101828':(type==='danger'?'#7f1d1d':'#78350f');
+  el.style.display='block';
+  clearTimeout(toastT);
+  toastT=setTimeout(()=>el.style.display='none',3200);
+}
+
+// ══════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════
+renderUsers();
+renderUserPicker();
+renderAuditTables();
+</script>
+</body>
+</html>
