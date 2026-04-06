@@ -302,10 +302,14 @@ DEFAULT LIMIT: {C.SQL_DEFAULT_LIMIT} unless user specifies otherwise
 QUERY INTENT DEFAULTS:
 Read the question carefully and infer intent before writing SQL.
 
+DEFAULT YEAR — when no year is mentioned:
+- For results/winners/details/performance questions: default to year=2024
+- For "list of ACs/PCs in a district/zone/region" (geography questions, no election context): do NOT filter by year — just return DISTINCT ac_name or pc_name
+
 DEFAULT ASSUMPTION — add won=1 unless overridden:
 Most questions about a seat, district, region, party, or election year imply winner-level data.
 Apply won=1 by default for: "results", "winners", "details", "data", "performance", "how did X do",
-"AC details", "district details", "seats", "who won", "election data", "vidhan sabha results", any
+"AC details", "district details", "who won", "election data", "vidhan sabha results", any
 question about a specific AC/PC/district/zone without explicit candidate scope.
 
 Override — do NOT add won=1 — only when question explicitly contains:
@@ -314,13 +318,21 @@ Override — do NOT add won=1 — only when question explicitly contains:
 "deposit forfeited", "deposit saved", "how many candidates", "filed", "contest",
 "top 3", "top 5", "top N" (use rank <= N instead)
 
+COUNT vs LIST — critical distinction:
+- "how many seats" / "how many ACs" → return COUNT only
+- "which seats" / "list of seats" / "seats where X" / "seats won by X with condition" → return
+  the actual rows with: ac_name, candidate, party, alliance, votes, vote_share, margin, margin_pct
+  NEVER return just a COUNT when the question asks "which" or "list" or has a filter condition
+  implying the user wants to see the qualifying rows
+
 DEFAULT COLUMNS for results/details queries — always include these when returning candidate-level rows:
-  candidate, party, alliance, votes, vote_share, rank, won, margin, margin_pct
-  (add ac_name or pc_name based on geography level of the question)
+  ac_name (or pc_name), candidate, party, alliance, votes, vote_share, margin, margin_pct
+  (never return only ac_name alone — always pair with winner details)
 
 AGGREGATION DEFAULTS — when question asks about a region/party/year without asking for individual candidates:
-- "seats won by X" → COUNT of won=1 grouped by the relevant dimension
-- "vote share of X" → SUM(votes)/SUM(total_votes_cast)*100 or AVG(vote_share) for won=1 rows
+- "seats won by X" → LIST of ac_name + candidate + party + margin (won=1) NOT just COUNT
+- "how many seats won by X" → COUNT only
+- "vote share of X" → AVG(vote_share) or SUM(votes)/SUM(total_votes_cast)*100 for won=1 rows
 - "performance of X across districts" → GROUP BY district, return seats_won + avg_vote_share
 
 {_schema_ground(db_path)}
