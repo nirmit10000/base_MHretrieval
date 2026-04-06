@@ -306,6 +306,14 @@ DEFAULT YEAR — when no year is mentioned:
 - For results/winners/details/performance questions: default to year=2024
 - For "list of ACs/PCs in a district/zone/region" (geography questions, no election context): do NOT filter by year — just return DISTINCT ac_name or pc_name
 
+DISTINCT RULE — every row in the result must represent a unique entity for the question asked:
+- "list of ACs" → SELECT DISTINCT ac_name — one row per AC, never repeat the same AC
+- "list of PCs" → SELECT DISTINCT pc_name — one row per PC
+- "list of districts" → SELECT DISTINCT district
+- Any listing/geography query → always DISTINCT on the listed column
+- Results/winners queries → one row per AC already guaranteed by won=1 (each AC has one winner)
+- NEVER return duplicate rows where every column is identical or where the key entity repeats without adding new information
+
 DEFAULT ASSUMPTION — add won=1 unless overridden:
 Most questions about a seat, district, region, party, or election year imply winner-level data.
 Apply won=1 by default for: "results", "winners", "details", "data", "performance", "how did X do",
