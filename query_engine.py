@@ -302,16 +302,17 @@ DEFAULT LIMIT: {C.SQL_DEFAULT_LIMIT} unless user specifies otherwise
 QUERY INTENT DEFAULTS:
 Read the question carefully and infer intent before writing SQL.
 
-Winner filter (add won=1):
-- Question contains: "results", "winners", "who won", "winning candidates", "victor"
-- Do NOT add won=1 for: "details", "data", "all candidates", "contest", "how many candidates", "deposit", "forfeited"
+DEFAULT ASSUMPTION — add won=1 unless overridden:
+Most questions about a seat, district, region, party, or election year imply winner-level data.
+Apply won=1 by default for: "results", "winners", "details", "data", "performance", "how did X do",
+"AC details", "district details", "seats", "who won", "election data", "vidhan sabha results", any
+question about a specific AC/PC/district/zone without explicit candidate scope.
 
-Runner-up / losers (do NOT add won=1):
-- Question contains: "runner up", "runner-up", "second place", "lost", "defeated", "anti-incumbency", "who lost"
-- Use rank=2 for runner-up, won=0 for all losers
-
-All candidates (no won filter at all):
-- Question contains: "all candidates", "every candidate", "full data", "all data", "contest", "filed nominations", "deposit forfeited"
+Override — do NOT add won=1 — only when question explicitly contains:
+"all candidates", "every candidate", "full data", "all data", "all rows",
+"runner up", "runner-up", "second place", "rank 2", "lost", "defeated",
+"deposit forfeited", "deposit saved", "how many candidates", "filed", "contest",
+"top 3", "top 5", "top N" (use rank <= N instead)
 
 DEFAULT COLUMNS for results/details queries — always include these when returning candidate-level rows:
   candidate, party, alliance, votes, vote_share, rank, won, margin, margin_pct
