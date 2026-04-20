@@ -437,6 +437,17 @@ def _status_bar(db_used, verified, n_rows):
 def _expand_dialog(rows, question):
     df = pd.DataFrame(rows)
     level, color, light = _detect_level(question)
+
+    # ── Query header — always visible above the scrolling dataframe ──
+    st.markdown(
+        f'<div style="border-left:3px solid #D97706;padding:7px 12px;margin-bottom:12px;background:#FEF3C7;border-radius:0 6px 6px 0">'
+        f'<span style="font-family:IBM Plex Mono,monospace;font-size:10px;font-weight:700;color:#B45309;letter-spacing:.06em">Q</span>'
+        f'<span style="font-size:13px;color:#3D3A35;margin-left:8px;font-style:italic">&ldquo;{question}&rdquo;</span>'
+        f'</div>',
+        unsafe_allow_html=True,
+    )
+
+    # ── Level pill + row count ──
     st.markdown(
         f'<span style="background:{light};color:{color};border:1px solid {color}30;'
         f'font-size:11px;font-weight:600;padding:2px 8px;border-radius:20px;'
@@ -445,7 +456,7 @@ def _expand_dialog(rows, question):
         unsafe_allow_html=True,
     )
     df.index = range(1, len(df) + 1)
-    st.dataframe(df, use_container_width=True, height=520)
+    st.dataframe(df, use_container_width=True, height=480)
     st.markdown("<div style='height:6px'></div>", unsafe_allow_html=True)
     c1, c2 = st.columns(2, gap="small")
     with c1:
