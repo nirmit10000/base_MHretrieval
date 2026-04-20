@@ -441,8 +441,8 @@ def _expand_dialog(rows, question):
     # ── Query header — always visible above the scrolling dataframe ──
     st.markdown(
         f'<div style="border-left:3px solid #D97706;padding:7px 12px;margin-bottom:12px;background:#FEF3C7;border-radius:0 6px 6px 0">'
-        f'<span style="font-family:IBM Plex Mono,monospace;font-size:10px;font-weight:700;color:#B45309;letter-spacing:.06em">Q</span>'
-        f'<span style="font-size:13px;color:#3D3A35;margin-left:8px;font-style:italic">&ldquo;{question}&rdquo;</span>'
+        f'<span style="font-family:IBM Plex Mono,monospace;font-size:11px;font-weight:700;color:#B45309;letter-spacing:.06em">Q</span>'
+        f'<span style="font-size:15px;color:#3D3A35;margin-left:10px;font-style:italic;line-height:1.55;word-break:break-word;white-space:normal">&ldquo;{question}&rdquo;</span>'
         f'</div>',
         unsafe_allow_html=True,
     )
